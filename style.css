@@ -1,0 +1,24 @@
+html, body, #elm {
+    height: 100%;
+}
+
+#elm {
+    padding: 10px;
+}
+
+form {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+form > div {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: 150px 1fr 10ch;
+    column-gap: 10px;
+}
+
+form > div > label {
+    flex-basis: 200px;
+}
