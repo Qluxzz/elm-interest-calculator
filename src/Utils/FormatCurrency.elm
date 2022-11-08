@@ -63,21 +63,21 @@ formatCurrency2 v =
         length =
             String.length s
     in
-    s
-        |> String.split ""
-        |> List.indexedMap Tuple.pair
-        |> List.foldr
-            (\( i, ss ) ->
-                \acc ->
-                    case Dict.get length holes of
-                        Just h ->
+    case Dict.get length holes of
+        Just h ->
+            s
+                |> String.split ""
+                |> List.indexedMap Tuple.pair
+                |> List.foldr
+                    (\( i, ss ) ->
+                        \acc ->
                             if List.member i h then
                                 ss ++ " " ++ acc
 
                             else
                                 ss ++ acc
+                    )
+                    ""
 
-                        Nothing ->
-                            ss ++ acc
-            )
-            ""
+        Nothing ->
+            s
