@@ -2,12 +2,17 @@ html, body, #elm {
     height: 100%;
 }
 
+body {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
 #elm {
     padding: 10px;
 }
 
 form {
-    flex-grow: 1;
     display: grid;
     grid-template-columns: 1fr;
 }
@@ -21,4 +26,28 @@ form > div {
 
 form > div > label {
     flex-basis: 200px;
+}
+
+table {
+    min-width: 800px;
+    width: 100%;
+}
+
+thead {
+    position: sticky;
+    top: 0;
+    background: #fff;
+}
+
+th {
+    text-align: right;
+}
+
+td {
+    text-align: right;
+}
+
+#results {
+    overflow: auto;
+    padding: 0 10px;
 }

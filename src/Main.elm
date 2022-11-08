@@ -9,6 +9,7 @@ import Url
 import Url.Builder
 import Url.Parser
 import Url.Parser.Query
+import Utils.FormatCurrency exposing (formatCurrency2)
 
 
 main : Program () Model Msg
@@ -247,7 +248,7 @@ view model =
             , input
                 [ Attr.type_ "range"
                 , Attr.min "0"
-                , Attr.max "20"
+                , Attr.max "40"
                 , Attr.step "1"
                 , Attr.value <| String.fromInt <| model.years
                 , Event.onInput UpdateYears
@@ -264,4 +265,99 @@ view model =
             [ Event.onClick Reset ]
             [ text "Återställ!" ]
         ]
+    , div [ Attr.id "results" ]
+        [ table []
+            [ thead []
+                [ tr []
+                    (List.map
+                        (\c -> th [] [ text c ])
+                        [ "År", "Startvärde", "Årets sparande", "Avkastning (kr)", "Värde vid årets slut", "Årets sparande (ack.)", "Avkastning (ack.)" ]
+                    )
+                ]
+            , tbody []
+                (List.map
+                    mapRow
+                    (calculate model)
+                )
+            ]
+        ]
     ]
+
+
+mapRow : Row -> Html msg
+mapRow { year, start, yearlySavings, yield, valueAtYearsEnd, yearlySavingsAccumulated, yieldAccumulated } =
+    tr []
+        [ td [] [ text (String.fromInt year) ]
+        , td [] [ text (formatCurrency2 start) ]
+        , td [] [ text (formatCurrency2 yearlySavings) ]
+        , td [] [ text (formatCurrency2 yield) ]
+        , td [] [ text (formatCurrency2 valueAtYearsEnd) ]
+        , td [] [ text (formatCurrency2 yearlySavingsAccumulated) ]
+        , td [] [ text (formatCurrency2 yieldAccumulated) ]
+        ]
+
+
+type alias Row =
+    { year : Int
+    , start : Int
+    , yearlySavings : Int
+    , yield : Int
+    , valueAtYearsEnd : Int
+    , yearlySavingsAccumulated : Int
+    , yieldAccumulated : Int
+    }
+
+
+calculate : Model -> List Row
+calculate model =
+    let
+        initalYearlySavings : Int
+        initalYearlySavings =
+            model.monthlySavings * 12
+
+        initalYield : Int
+        initalYield =
+            round (toFloat (model.start + initalYearlySavings) * (model.interest / 100))
+
+        inital : Row
+        inital =
+            { year = 1
+            , start = model.start
+            , yearlySavings = initalYearlySavings
+            , yield = initalYield
+            , valueAtYearsEnd = model.start + initalYearlySavings + initalYield
+            , yearlySavingsAccumulated = initalYearlySavings
+            , yieldAccumulated = initalYield
+            }
+    in
+    List.foldl
+        (\i ->
+            \acc ->
+                case acc of
+                    previous :: _ ->
+                        let
+                            yield =
+                                round (toFloat (previous.valueAtYearsEnd + model.monthlySavings * 12) * (model.interest / 100))
+
+                            yearlySavings =
+                                model.monthlySavings * 12
+
+                            current : Row
+                            current =
+                                { year = i
+                                , start = previous.valueAtYearsEnd
+                                , yearlySavings = yearlySavings
+                                , yield = yield
+                                , valueAtYearsEnd = previous.valueAtYearsEnd + yearlySavings + yield
+                                , yearlySavingsAccumulated = previous.yearlySavingsAccumulated + yearlySavings
+                                , yieldAccumulated = previous.yieldAccumulated + yield
+                                }
+                        in
+                        current :: acc
+
+                    [] ->
+                        acc
+        )
+        [ inital ]
+        (List.range 2 model.years)
+        |> List.reverse
