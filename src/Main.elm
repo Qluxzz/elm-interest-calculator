@@ -30,7 +30,7 @@ main =
 type alias Query =
     { monthlySavings : Maybe Int
     , years : Maybe Int
-    , interest : Maybe Int
+    , interest : Maybe String
     , start : Maybe Int
     }
 
@@ -62,7 +62,7 @@ parseSharedUrl =
             Query
             (Url.Parser.Query.int montlySavingsQueryParam)
             (Url.Parser.Query.int yearsQueryParam)
-            (Url.Parser.Query.int interestQueryParam)
+            (Url.Parser.Query.string interestQueryParam)
             (Url.Parser.Query.int startingSavingsQueryParam)
         )
 
@@ -70,7 +70,7 @@ parseSharedUrl =
 shareUrl : Model -> String
 shareUrl model =
     Url.Builder.absolute []
-        [ Url.Builder.int interestQueryParam model.yearlyInterest
+        [ Url.Builder.string interestQueryParam (String.fromFloat model.interest)
         , Url.Builder.int montlySavingsQueryParam model.monthlySavings
         , Url.Builder.int startingSavingsQueryParam model.start
         , Url.Builder.int yearsQueryParam model.years
@@ -80,7 +80,7 @@ shareUrl model =
 type alias Model =
     { key : Nav.Key
     , url : Url.Url
-    , yearlyInterest : Int
+    , interest : Float
     , monthlySavings : Int
     , start : Int
     , years : Int
@@ -109,7 +109,7 @@ getSettingsFromQuery key url =
             Model
                 key
                 url
-                (Maybe.withDefault 7 settings.interest)
+                (settings.interest |> Maybe.andThen String.toFloat |> Maybe.withDefault 7.0)
                 (Maybe.withDefault 1000 settings.monthlySavings)
                 (Maybe.withDefault 10000 settings.start)
                 (Maybe.withDefault 20 settings.years)
@@ -124,10 +124,10 @@ init _ url key =
 
 
 type Msg
-    = UpdateYearlyInterest Int
-    | UpdateMonthlySavings Int
-    | UpdateStartbelopp Int
-    | UpdateYears Int
+    = UpdateInterest String
+    | UpdateMonthlySavings String
+    | UpdateStartbelopp String
+    | UpdateYears String
     | Share
     | Reset
     | UrlRequested Browser.UrlRequest
@@ -136,18 +136,43 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    let
+        noUpdate : ( Model, Cmd Msg )
+        noUpdate =
+            ( model, Cmd.none )
+    in
     case msg of
-        UpdateYearlyInterest interest ->
-            ( { model | yearlyInterest = interest }, Cmd.none )
+        UpdateInterest interest ->
+            case String.toFloat interest of
+                Just i ->
+                    ( { model | interest = i }, Cmd.none )
+
+                Nothing ->
+                    noUpdate
 
         UpdateMonthlySavings savings ->
-            ( { model | monthlySavings = savings }, Cmd.none )
+            case String.toInt savings of
+                Just s ->
+                    ( { model | monthlySavings = s }, Cmd.none )
+
+                Nothing ->
+                    noUpdate
 
         UpdateStartbelopp starting ->
-            ( { model | start = starting }, Cmd.none )
+            case String.toInt starting of
+                Just s ->
+                    ( { model | start = s }, Cmd.none )
+
+                Nothing ->
+                    noUpdate
 
         UpdateYears years ->
-            ( { model | years = years }, Cmd.none )
+            case String.toInt years of
+                Just y ->
+                    ( { model | years = y }, Cmd.none )
+
+                Nothing ->
+                    noUpdate
 
         UrlRequested urlRequest ->
             case urlRequest of
@@ -174,16 +199,6 @@ update msg model =
             ( defaultModel, Nav.replaceUrl model.key (shareUrl defaultModel) )
 
 
-defaultToZero : String -> Int
-defaultToZero =
-    String.toInt >> Maybe.withDefault 0
-
-
-intValue : Int -> Attribute msg
-intValue =
-    String.fromInt >> Attr.value
-
-
 view : Model -> Html.Styled.Html Msg
 view model =
     div []
@@ -195,11 +210,12 @@ view model =
                     [ Attr.type_ "range"
                     , Attr.min "0"
                     , Attr.max "25"
-                    , intValue model.yearlyInterest
-                    , Event.onInput (\v -> UpdateYearlyInterest (defaultToZero v))
+                    , Attr.step "0.1"
+                    , Attr.value <| String.fromFloat <| model.interest
+                    , Event.onInput UpdateInterest
                     ]
                     []
-                , span [] [ text (String.fromInt model.yearlyInterest) ]
+                , span [] [ text (String.fromFloat model.interest) ]
                 ]
             , div []
                 [ label [ Attr.for "monthly-savings" ] [ text "Månadssparande" ]
@@ -208,8 +224,8 @@ view model =
                     , Attr.min "0"
                     , Attr.max "20000"
                     , Attr.step "100"
-                    , intValue model.monthlySavings
-                    , Event.onInput (\v -> UpdateMonthlySavings (defaultToZero v))
+                    , Attr.value <| String.fromInt <| model.monthlySavings
+                    , Event.onInput UpdateMonthlySavings
                     ]
                     []
                 , span [] [ text (String.fromInt model.monthlySavings) ]
@@ -221,8 +237,8 @@ view model =
                     , Attr.min "0"
                     , Attr.max "1000000"
                     , Attr.step "1000"
-                    , intValue model.start
-                    , Event.onInput (\v -> UpdateStartbelopp (defaultToZero v))
+                    , Attr.value <| String.fromInt <| model.start
+                    , Event.onInput UpdateStartbelopp
                     ]
                     []
                 , span [] [ text (String.fromInt model.start) ]
@@ -234,8 +250,8 @@ view model =
                     , Attr.min "0"
                     , Attr.max "20"
                     , Attr.step "1"
-                    , intValue model.years
-                    , Event.onInput (\v -> UpdateYears (defaultToZero v))
+                    , Attr.value <| String.fromInt <| model.years
+                    , Event.onInput UpdateYears
                     ]
                     []
                 , span [] [ text (String.fromInt model.years) ]
