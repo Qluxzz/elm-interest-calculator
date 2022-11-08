@@ -2,9 +2,9 @@ module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
-import Html.Styled exposing (..)
-import Html.Styled.Attributes as Attr
-import Html.Styled.Events as Event
+import Html exposing (..)
+import Html.Attributes as Attr
+import Html.Events as Event
 import Url
 import Url.Builder
 import Url.Parser
@@ -18,7 +18,7 @@ main =
         , view =
             \model ->
                 { title = "Ränta på ränta"
-                , body = [ view model |> toUnstyled ]
+                , body = [ view model ]
                 }
         , update = update
         , subscriptions = \_ -> Sub.none
@@ -199,7 +199,7 @@ update msg model =
             ( defaultModel, Nav.replaceUrl model.key (shareUrl defaultModel) )
 
 
-view : Model -> Html.Styled.Html Msg
+view : Model -> Html.Html Msg
 view model =
     div []
         [ h1 [] [ text "Ränta på ränta" ]
