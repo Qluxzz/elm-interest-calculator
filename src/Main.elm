@@ -18,7 +18,7 @@ main =
         , view =
             \model ->
                 { title = "Ränta på ränta"
-                , body = [ view model ]
+                , body = view model
                 }
         , update = update
         , subscriptions = \_ -> Sub.none
@@ -199,70 +199,69 @@ update msg model =
             ( defaultModel, Nav.replaceUrl model.key (shareUrl defaultModel) )
 
 
-view : Model -> Html.Html Msg
+view : Model -> List (Html Msg)
 view model =
-    div []
-        [ h1 [] [ text "Ränta på ränta" ]
-        , form []
-            [ div []
-                [ label [ Attr.for "interest" ] [ text "Ränta per år (%)" ]
-                , input
-                    [ Attr.type_ "range"
-                    , Attr.min "0"
-                    , Attr.max "25"
-                    , Attr.step "0.1"
-                    , Attr.value <| String.fromFloat <| model.interest
-                    , Event.onInput UpdateInterest
-                    ]
-                    []
-                , span [] [ text (String.fromFloat model.interest) ]
+    [ h1 [] [ text "Ränta på ränta" ]
+    , form []
+        [ div []
+            [ label [ Attr.for "interest" ] [ text "Ränta per år (%)" ]
+            , input
+                [ Attr.type_ "range"
+                , Attr.min "0"
+                , Attr.max "25"
+                , Attr.step "0.1"
+                , Attr.value <| String.fromFloat <| model.interest
+                , Event.onInput UpdateInterest
                 ]
-            , div []
-                [ label [ Attr.for "monthly-savings" ] [ text "Månadssparande" ]
-                , input
-                    [ Attr.type_ "range"
-                    , Attr.min "0"
-                    , Attr.max "20000"
-                    , Attr.step "100"
-                    , Attr.value <| String.fromInt <| model.monthlySavings
-                    , Event.onInput UpdateMonthlySavings
-                    ]
-                    []
-                , span [] [ text (String.fromInt model.monthlySavings) ]
-                ]
-            , div []
-                [ label [ Attr.for "starting" ] [ text "Startbelopp" ]
-                , input
-                    [ Attr.type_ "range"
-                    , Attr.min "0"
-                    , Attr.max "1000000"
-                    , Attr.step "1000"
-                    , Attr.value <| String.fromInt <| model.start
-                    , Event.onInput UpdateStartbelopp
-                    ]
-                    []
-                , span [] [ text (String.fromInt model.start) ]
-                ]
-            , div []
-                [ label [ Attr.for "years" ] [ text "Antal år" ]
-                , input
-                    [ Attr.type_ "range"
-                    , Attr.min "0"
-                    , Attr.max "20"
-                    , Attr.step "1"
-                    , Attr.value <| String.fromInt <| model.years
-                    , Event.onInput UpdateYears
-                    ]
-                    []
-                , span [] [ text (String.fromInt model.years) ]
-                ]
+                []
+            , span [] [ text (String.fromFloat model.interest) ]
             ]
         , div []
-            [ button
-                [ Event.onClick Share ]
-                [ text "Dela!" ]
-            , button
-                [ Event.onClick Reset ]
-                [ text "Återställ!" ]
+            [ label [ Attr.for "monthly-savings" ] [ text "Månadssparande" ]
+            , input
+                [ Attr.type_ "range"
+                , Attr.min "0"
+                , Attr.max "20000"
+                , Attr.step "100"
+                , Attr.value <| String.fromInt <| model.monthlySavings
+                , Event.onInput UpdateMonthlySavings
+                ]
+                []
+            , span [] [ text (String.fromInt model.monthlySavings) ]
+            ]
+        , div []
+            [ label [ Attr.for "starting" ] [ text "Startbelopp" ]
+            , input
+                [ Attr.type_ "range"
+                , Attr.min "0"
+                , Attr.max "1000000"
+                , Attr.step "1000"
+                , Attr.value <| String.fromInt <| model.start
+                , Event.onInput UpdateStartbelopp
+                ]
+                []
+            , span [] [ text (String.fromInt model.start) ]
+            ]
+        , div []
+            [ label [ Attr.for "years" ] [ text "Antal år" ]
+            , input
+                [ Attr.type_ "range"
+                , Attr.min "0"
+                , Attr.max "20"
+                , Attr.step "1"
+                , Attr.value <| String.fromInt <| model.years
+                , Event.onInput UpdateYears
+                ]
+                []
+            , span [] [ text (String.fromInt model.years) ]
             ]
         ]
+    , div []
+        [ button
+            [ Event.onClick Share ]
+            [ text "Dela!" ]
+        , button
+            [ Event.onClick Reset ]
+            [ text "Återställ!" ]
+        ]
+    ]
