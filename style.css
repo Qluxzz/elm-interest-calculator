@@ -6,6 +6,7 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    padding: 10px;
 }
 
 #elm {
@@ -29,7 +30,7 @@ form > div > label {
 }
 
 table {
-    min-width: 800px;
+    min-width: 950px;
     width: 100%;
 }
 
