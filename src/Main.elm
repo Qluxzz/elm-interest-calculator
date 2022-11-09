@@ -228,7 +228,7 @@ view model =
                 , Event.onInput UpdateMonthlySavings
                 ]
                 []
-            , span [] [ text (String.fromInt model.monthlySavings) ]
+            , span [] [ text (formatCurrency model.monthlySavings) ]
             ]
         , div []
             [ label [ Attr.for "starting" ] [ text "Startbelopp" ]
@@ -241,7 +241,7 @@ view model =
                 , Event.onInput UpdateStartbelopp
                 ]
                 []
-            , span [] [ text (String.fromInt model.start) ]
+            , span [] [ text (formatCurrency model.start) ]
             ]
         , div []
             [ label [ Attr.for "years" ] [ text "Antal år" ]
