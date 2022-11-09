@@ -5,8 +5,6 @@ import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Event
-import Process exposing (sleep)
-import Task
 import Url
 import Url.Builder
 import Url.Parser
