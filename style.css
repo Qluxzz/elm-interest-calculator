@@ -52,3 +52,9 @@ td {
     overflow: auto;
     padding: 0 10px;
 }
+
+#actions {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+}

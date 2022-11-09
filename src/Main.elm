@@ -133,14 +133,16 @@ init _ url key =
 
 
 type Msg
-    = UpdateInterest String
+    = UrlRequested Browser.UrlRequest
+    | UrlChanged Url.Url
+      -- Sliders
+    | UpdateInterest String
     | UpdateMonthlySavings String
     | UpdateStartbelopp String
     | UpdateYears String
+      -- Action buttons
     | Share
     | Reset
-    | UrlRequested Browser.UrlRequest
-    | UrlChanged Url.Url
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -280,7 +282,7 @@ view { settings } =
             , span [] [ text (String.fromInt settings.years) ]
             ]
         ]
-    , div []
+    , div [ Attr.id "actions" ]
         [ button
             [ Event.onClick Share ]
             [ text "Dela!" ]
