@@ -322,24 +322,24 @@ mapRow { year, start, yearlySavings, yield, valueAtYearsEnd, yearlySavingsAccumu
         (List.map
             (\v -> td [] [ text v ])
             [ String.fromInt year
-            , formatCurrency start
-            , formatCurrency yearlySavings
-            , formatCurrency yield
-            , formatCurrency valueAtYearsEnd
-            , formatCurrency yearlySavingsAccumulated
-            , formatCurrency yieldAccumulated
+            , formatCurrency (round start)
+            , formatCurrency (round yearlySavings)
+            , formatCurrency (round yield)
+            , formatCurrency (round valueAtYearsEnd)
+            , formatCurrency (round yearlySavingsAccumulated)
+            , formatCurrency (round yieldAccumulated)
             ]
         )
 
 
 type alias Row =
     { year : Int
-    , start : Int
-    , yearlySavings : Int
-    , yield : Int
-    , valueAtYearsEnd : Int
-    , yearlySavingsAccumulated : Int
-    , yieldAccumulated : Int
+    , start : Float
+    , yearlySavings : Float
+    , yield : Float
+    , valueAtYearsEnd : Float
+    , yearlySavingsAccumulated : Float
+    , yieldAccumulated : Float
     }
 
 
@@ -350,18 +350,18 @@ calculate { monthlySavings, start, interest, years } =
         initalYearlySavings =
             monthlySavings * 12
 
-        initalYield : Int
+        initalYield : Float
         initalYield =
-            round (toFloat (start + initalYearlySavings) * (interest / 100))
+            toFloat (start + initalYearlySavings) * (interest / 100)
 
         inital : Row
         inital =
             { year = 1
-            , start = start
-            , yearlySavings = initalYearlySavings
+            , start = toFloat start
+            , yearlySavings = toFloat initalYearlySavings
             , yield = initalYield
-            , valueAtYearsEnd = start + initalYearlySavings + initalYield
-            , yearlySavingsAccumulated = initalYearlySavings
+            , valueAtYearsEnd = toFloat start + toFloat initalYearlySavings + initalYield
+            , yearlySavingsAccumulated = toFloat initalYearlySavings
             , yieldAccumulated = initalYield
             }
     in
@@ -371,11 +371,11 @@ calculate { monthlySavings, start, interest, years } =
                 case acc of
                     previous :: _ ->
                         let
-                            yield =
-                                round (toFloat (previous.valueAtYearsEnd + monthlySavings * 12) * (interest / 100))
-
                             yearlySavings =
-                                monthlySavings * 12
+                                toFloat monthlySavings * 12
+
+                            yield =
+                                (previous.valueAtYearsEnd + yearlySavings) * (interest / 100.0)
 
                             current : Row
                             current =
