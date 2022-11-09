@@ -390,6 +390,7 @@ calculate { monthlySavings, start, interest, years } =
                         in
                         current :: acc
 
+                    {- We should always have at least one element, so this can never happen -}
                     [] ->
                         acc
         )
