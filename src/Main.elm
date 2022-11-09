@@ -5,6 +5,8 @@ import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Event
+import Process exposing (sleep)
+import Task
 import Url
 import Url.Builder
 import Url.Parser
@@ -68,60 +70,66 @@ parseSharedUrl =
         )
 
 
-shareUrl : Model -> String
-shareUrl model =
+shareUrl : Settings -> String
+shareUrl { interest, monthlySavings, start, years } =
     Url.Builder.absolute []
-        [ Url.Builder.string interestQueryParam (String.fromFloat model.interest)
-        , Url.Builder.int montlySavingsQueryParam model.monthlySavings
-        , Url.Builder.int startingSavingsQueryParam model.start
-        , Url.Builder.int yearsQueryParam model.years
+        [ Url.Builder.string interestQueryParam (String.fromFloat interest)
+        , Url.Builder.int montlySavingsQueryParam monthlySavings
+        , Url.Builder.int startingSavingsQueryParam start
+        , Url.Builder.int yearsQueryParam years
         ]
 
 
-type alias Model =
-    { key : Nav.Key
-    , url : Url.Url
-    , interest : Float
+type alias Settings =
+    { interest : Float
     , monthlySavings : Int
     , start : Int
     , years : Int
     }
 
 
-default : Nav.Key -> Url.Url -> Model
-default key url =
-    Model
-        key
-        url
-        7
+type alias Model =
+    { key : Nav.Key
+    , url : Url.Url
+    , settings : Settings
+    }
+
+
+defaultSettings : Settings
+defaultSettings =
+    Settings
+        7.0
         1000
         10000
         20
 
 
-getSettingsFromQuery : Nav.Key -> Url.Url -> Model
-getSettingsFromQuery key url =
+getSettingsFromQuery : Url.Url -> Settings
+getSettingsFromQuery url =
     let
         maybeSettings =
             Url.Parser.parse parseSharedUrl url
     in
     case maybeSettings of
         Just settings ->
-            Model
-                key
-                url
+            Settings
                 (settings.interest |> Maybe.andThen String.toFloat |> Maybe.withDefault 7.0)
                 (Maybe.withDefault 1000 settings.monthlySavings)
                 (Maybe.withDefault 10000 settings.start)
                 (Maybe.withDefault 20 settings.years)
 
         Nothing ->
-            default key url
+            defaultSettings
 
 
 init : flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init _ url key =
-    ( getSettingsFromQuery key url, Cmd.none )
+    ( { url = url
+      , key = key
+      , settings = getSettingsFromQuery url
+      }
+    , Cmd.none
+    )
 
 
 type Msg
@@ -141,12 +149,19 @@ update msg model =
         noUpdate : ( Model, Cmd Msg )
         noUpdate =
             ( model, Cmd.none )
+
+        settings =
+            model.settings
     in
     case msg of
         UpdateInterest interest ->
             case String.toFloat interest of
                 Just i ->
-                    ( { model | interest = i }, Cmd.none )
+                    let
+                        updatedSettings =
+                            { settings | interest = i }
+                    in
+                    ( { model | settings = updatedSettings }, Cmd.none )
 
                 Nothing ->
                     noUpdate
@@ -154,7 +169,11 @@ update msg model =
         UpdateMonthlySavings savings ->
             case String.toInt savings of
                 Just s ->
-                    ( { model | monthlySavings = s }, Cmd.none )
+                    let
+                        updatedSettings =
+                            { settings | monthlySavings = s }
+                    in
+                    ( { model | settings = updatedSettings }, Cmd.none )
 
                 Nothing ->
                     noUpdate
@@ -162,7 +181,11 @@ update msg model =
         UpdateStartbelopp starting ->
             case String.toInt starting of
                 Just s ->
-                    ( { model | start = s }, Cmd.none )
+                    let
+                        updatedSettings =
+                            { settings | start = s }
+                    in
+                    ( { model | settings = updatedSettings }, Cmd.none )
 
                 Nothing ->
                     noUpdate
@@ -170,7 +193,11 @@ update msg model =
         UpdateYears years ->
             case String.toInt years of
                 Just y ->
-                    ( { model | years = y }, Cmd.none )
+                    let
+                        updatedSettings =
+                            { settings | years = y }
+                    in
+                    ( { model | settings = updatedSettings }, Cmd.none )
 
                 Nothing ->
                     noUpdate
@@ -184,24 +211,20 @@ update msg model =
                     ( model, Nav.load href )
 
         UrlChanged url ->
-            ( getSettingsFromQuery model.key url
+            ( { model | url = url, settings = getSettingsFromQuery url }
             , Cmd.none
             )
 
         {- TODO: Copy link to clipboard on click -}
         Share ->
-            ( model, Nav.replaceUrl model.key (shareUrl model) )
+            ( model, Nav.replaceUrl model.key (shareUrl model.settings) )
 
         Reset ->
-            let
-                defaultModel =
-                    default model.key model.url
-            in
-            ( defaultModel, Nav.replaceUrl model.key (shareUrl defaultModel) )
+            ( model, Nav.replaceUrl model.key (shareUrl defaultSettings) )
 
 
 view : Model -> List (Html Msg)
-view model =
+view { settings } =
     [ h1 [] [ text "Ränta på ränta" ]
     , form []
         [ div []
@@ -211,11 +234,11 @@ view model =
                 , Attr.min "0"
                 , Attr.max "25"
                 , Attr.step "0.1"
-                , Attr.value <| String.fromFloat <| model.interest
+                , Attr.value <| String.fromFloat <| settings.interest
                 , Event.onInput UpdateInterest
                 ]
                 []
-            , span [] [ text (String.fromFloat model.interest) ]
+            , span [] [ text (String.fromFloat settings.interest) ]
             ]
         , div []
             [ label [ Attr.for "monthly-savings" ] [ text "Månadssparande" ]
@@ -224,11 +247,11 @@ view model =
                 , Attr.min "0"
                 , Attr.max "20000"
                 , Attr.step "100"
-                , Attr.value <| String.fromInt <| model.monthlySavings
+                , Attr.value <| String.fromInt <| settings.monthlySavings
                 , Event.onInput UpdateMonthlySavings
                 ]
                 []
-            , span [] [ text (formatCurrency model.monthlySavings) ]
+            , span [] [ text (formatCurrency settings.monthlySavings) ]
             ]
         , div []
             [ label [ Attr.for "starting" ] [ text "Startbelopp" ]
@@ -237,11 +260,11 @@ view model =
                 , Attr.min "0"
                 , Attr.max "1000000"
                 , Attr.step "1000"
-                , Attr.value <| String.fromInt <| model.start
+                , Attr.value <| String.fromInt <| settings.start
                 , Event.onInput UpdateStartbelopp
                 ]
                 []
-            , span [] [ text (formatCurrency model.start) ]
+            , span [] [ text (formatCurrency settings.start) ]
             ]
         , div []
             [ label [ Attr.for "years" ] [ text "Antal år" ]
@@ -250,11 +273,11 @@ view model =
                 , Attr.min "0"
                 , Attr.max "40"
                 , Attr.step "1"
-                , Attr.value <| String.fromInt <| model.years
+                , Attr.value <| String.fromInt <| settings.years
                 , Event.onInput UpdateYears
                 ]
                 []
-            , span [] [ text (String.fromInt model.years) ]
+            , span [] [ text (String.fromInt settings.years) ]
             ]
         ]
     , div []
@@ -284,7 +307,7 @@ view model =
             , tbody []
                 (List.map
                     mapRow
-                    (calculate model)
+                    (calculate settings)
                 )
             ]
         ]
@@ -318,24 +341,24 @@ type alias Row =
     }
 
 
-calculate : Model -> List Row
-calculate model =
+calculate : Settings -> List Row
+calculate { monthlySavings, start, interest, years } =
     let
         initalYearlySavings : Int
         initalYearlySavings =
-            model.monthlySavings * 12
+            monthlySavings * 12
 
         initalYield : Int
         initalYield =
-            round (toFloat (model.start + initalYearlySavings) * (model.interest / 100))
+            round (toFloat (start + initalYearlySavings) * (interest / 100))
 
         inital : Row
         inital =
             { year = 1
-            , start = model.start
+            , start = start
             , yearlySavings = initalYearlySavings
             , yield = initalYield
-            , valueAtYearsEnd = model.start + initalYearlySavings + initalYield
+            , valueAtYearsEnd = start + initalYearlySavings + initalYield
             , yearlySavingsAccumulated = initalYearlySavings
             , yieldAccumulated = initalYield
             }
@@ -347,10 +370,10 @@ calculate model =
                     previous :: _ ->
                         let
                             yield =
-                                round (toFloat (previous.valueAtYearsEnd + model.monthlySavings * 12) * (model.interest / 100))
+                                round (toFloat (previous.valueAtYearsEnd + monthlySavings * 12) * (interest / 100))
 
                             yearlySavings =
-                                model.monthlySavings * 12
+                                monthlySavings * 12
 
                             current : Row
                             current =
@@ -369,5 +392,5 @@ calculate model =
                         acc
         )
         [ inital ]
-        (List.range 2 model.years)
+        (List.range 2 years)
         |> List.reverse
