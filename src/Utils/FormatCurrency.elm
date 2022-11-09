@@ -2,31 +2,31 @@ module Utils.FormatCurrency exposing (..)
 
 
 formatCurrency : Int -> String
-formatCurrency v =
+formatCurrency amount =
     let
-        s =
-            String.fromInt v
+        amountStr =
+            String.fromInt amount
     in
     {- Amounts below 10 000 should always be written together -}
-    if v < 10000 then
-        s
+    if amount < 10000 then
+        amountStr
 
     else
-        s
+        amountStr
             |> String.foldr
-                (\c ->
+                (\char ->
                     \acc ->
                         case acc of
                             current :: rest ->
                                 let
-                                    cs =
-                                        String.fromChar c
+                                    charStr =
+                                        String.fromChar char
                                 in
                                 if String.length current < 3 then
-                                    (cs ++ current) :: rest
+                                    (charStr ++ current) :: rest
 
                                 else
-                                    cs :: current :: rest
+                                    charStr :: current :: rest
 
                             [] ->
                                 acc
