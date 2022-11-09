@@ -1,7 +1,8 @@
 module FormatCurrency exposing (..)
 
+import Expect exposing (..)
 import Test exposing (..)
-import Utils.FormatCurrency exposing (formatCurrency, formatCurrency2)
+import Utils.FormatCurrency exposing (formatCurrency)
 
 
 cases : List ( Int, String )
@@ -14,6 +15,7 @@ cases =
     , ( 10000000, "10 000 000" )
     , ( 100000000, "100 000 000" )
     , ( 1000000000, "1 000 000 000" )
+    , ( 10000000000, "10 000 000 000" )
     ]
 
 
@@ -25,7 +27,7 @@ suite =
                 test (String.fromInt input ++ " equals " ++ "\"" ++ wanted ++ "\"") <|
                     \_ ->
                         input
-                            |> formatCurrency2
+                            |> formatCurrency
                             |> Expect.equal wanted
             )
             cases

@@ -9,7 +9,7 @@ import Url
 import Url.Builder
 import Url.Parser
 import Url.Parser.Query
-import Utils.FormatCurrency exposing (formatCurrency2)
+import Utils.FormatCurrency exposing (formatCurrency)
 
 
 main : Program () Model Msg
@@ -271,7 +271,14 @@ view model =
                 [ tr []
                     (List.map
                         (\c -> th [] [ text c ])
-                        [ "År", "Startvärde", "Årets sparande", "Avkastning (kr)", "Värde vid årets slut", "Årets sparande (ack.)", "Avkastning (ack.)" ]
+                        [ "År"
+                        , "Startvärde"
+                        , "Årets sparande"
+                        , "Avkastning (kr)"
+                        , "Värde vid årets slut"
+                        , "Årets sparande (ack.)"
+                        , "Avkastning (ack.)"
+                        ]
                     )
                 ]
             , tbody []
@@ -287,14 +294,17 @@ view model =
 mapRow : Row -> Html msg
 mapRow { year, start, yearlySavings, yield, valueAtYearsEnd, yearlySavingsAccumulated, yieldAccumulated } =
     tr []
-        [ td [] [ text (String.fromInt year) ]
-        , td [] [ text (formatCurrency2 start) ]
-        , td [] [ text (formatCurrency2 yearlySavings) ]
-        , td [] [ text (formatCurrency2 yield) ]
-        , td [] [ text (formatCurrency2 valueAtYearsEnd) ]
-        , td [] [ text (formatCurrency2 yearlySavingsAccumulated) ]
-        , td [] [ text (formatCurrency2 yieldAccumulated) ]
-        ]
+        (List.map
+            (\v -> td [] [ text v ])
+            [ String.fromInt year
+            , formatCurrency start
+            , formatCurrency yearlySavings
+            , formatCurrency yield
+            , formatCurrency valueAtYearsEnd
+            , formatCurrency yearlySavingsAccumulated
+            , formatCurrency yieldAccumulated
+            ]
+        )
 
 
 type alias Row =
