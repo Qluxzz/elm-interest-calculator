@@ -1,3 +1,11 @@
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+* {
+    margin: 0;
+}
+
 html, body, #elm {
     height: 100%;
 }
@@ -7,27 +15,47 @@ body {
     flex-direction: column;
     overflow: hidden;
     padding: 10px;
+    gap: 10px;
 }
 
-#elm {
-    padding: 10px;
-}
+/* SETTINGS */
 
 form {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 form > div {
     flex-grow: 1;
-    display: grid;
-    grid-template-columns: 150px 1fr 10ch;
-    column-gap: 10px;
+    display: flex;
+    gap: 10px;
 }
 
 form > div > label {
-    flex-basis: 200px;
+    flex: 1 0 150px;
 }
+
+form > div > span {
+    flex: 1 0 8ch;
+    text-align: right;
+}
+
+form > div > input {
+    flex: 1 1 100%;
+}
+
+@media screen and (max-width: 450px) {
+    form > div {
+        flex-wrap: wrap;
+    }
+
+    form > div > input  {
+       order: 2;
+    }
+}
+
+/* RESULTS */
 
 table {
     min-width: 950px;
@@ -53,8 +81,9 @@ td {
     padding: 0 10px;
 }
 
+/* ACTIONS */
+
 #actions {
     display: flex;
     gap: 10px;
-    margin: 10px 0;
 }
