@@ -21,6 +21,27 @@
 		const app = Elm.Main.init({
 			node: document.getElementById("elm")
 		})
+
+		app.ports.shareSettings.subscribe(settingsQueryParams => {
+			const shareUrl = `${window.location.origin}${window.location.pathname}${settingsQueryParams}`
+
+			const tryShare = [
+				// Mobile devices supporting navigator.share
+				() => navigator.share({
+					title: "Ränta på ränta",
+					url: shareUrl
+				}),
+				// Desktop browsers
+				() => navigator.clipboard.writeText(shareUrl)
+			]
+
+			for (const method of tryShare) {
+				try {
+					method()
+					break
+				} catch { }
+			}
+		})
 	</script>
 </body>
 

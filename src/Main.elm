@@ -1,4 +1,4 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
@@ -70,7 +70,7 @@ parseSharedUrl =
 
 shareUrl : Settings -> String
 shareUrl { interest, monthlySavings, start, years } =
-    Url.Builder.absolute []
+    Url.Builder.toQuery
         [ Url.Builder.string interestQueryParam (String.fromFloat interest)
         , Url.Builder.int montlySavingsQueryParam monthlySavings
         , Url.Builder.int startingSavingsQueryParam start
@@ -128,6 +128,9 @@ init _ url key =
       }
     , Cmd.none
     )
+
+
+port shareSettings : String -> Cmd msg
 
 
 type Msg
@@ -215,9 +218,17 @@ update msg model =
             , Cmd.none
             )
 
-        {- TODO: Copy link to clipboard on click -}
         Share ->
-            ( model, Nav.replaceUrl model.key (shareUrl model.settings) )
+            let
+                queryParams =
+                    shareUrl model.settings
+            in
+            ( model
+            , Cmd.batch
+                [ Nav.replaceUrl model.key queryParams
+                , shareSettings queryParams
+                ]
+            )
 
         Reset ->
             ( model, Nav.replaceUrl model.key (shareUrl defaultSettings) )
