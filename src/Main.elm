@@ -106,7 +106,9 @@ getSettingsFromQuery : Url.Url -> Settings
 getSettingsFromQuery url =
     let
         maybeSettings =
-            Url.Parser.parse parseSharedUrl url
+            {- Clear path so parser run regardless of which path it is on -}
+            { url | path = "" }
+                |> Url.Parser.parse parseSharedUrl
     in
     case maybeSettings of
         Just settings ->
