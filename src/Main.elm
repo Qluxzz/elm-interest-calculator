@@ -102,7 +102,7 @@ defaultSettings =
         20
 
 
-getSettingsFromQuery : Url.Url -> Settings
+getSettingsFromQuery : Url.Url -> Maybe Settings
 getSettingsFromQuery url =
     let
         maybeSettings =
@@ -110,23 +110,37 @@ getSettingsFromQuery url =
             { url | path = "" }
                 |> Url.Parser.parse parseSharedUrl
     in
-    case maybeSettings of
-        Just settings ->
-            Settings
-                (settings.interest |> Maybe.andThen String.toFloat |> Maybe.withDefault 7.0)
-                (Maybe.withDefault 1000 settings.monthlySavings)
-                (Maybe.withDefault 10000 settings.start)
-                (Maybe.withDefault 20 settings.years)
+    Maybe.andThen
+        (\settings ->
+            Maybe.map4
+                (\interest ->
+                    \monthlySavings ->
+                        \start ->
+                            \years ->
+                                Settings
+                                    interest
+                                    monthlySavings
+                                    start
+                                    years
+                )
+                (settings.interest |> Maybe.andThen String.toFloat)
+                settings.monthlySavings
+                settings.start
+                settings.years
+        )
+        maybeSettings
 
-        Nothing ->
-            defaultSettings
+
+getSettingsFromQueryOrDefault : Url.Url -> Settings
+getSettingsFromQueryOrDefault =
+    getSettingsFromQuery >> Maybe.withDefault defaultSettings
 
 
 init : flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init _ url key =
     ( { url = url
       , key = key
-      , settings = getSettingsFromQuery url
+      , settings = getSettingsFromQueryOrDefault url
       }
     , Cmd.none
     )
@@ -216,7 +230,7 @@ update msg model =
                     ( model, Nav.load href )
 
         UrlChanged url ->
-            ( { model | url = url, settings = getSettingsFromQuery url }
+            ( { model | url = url, settings = getSettingsFromQueryOrDefault url }
             , Cmd.none
             )
 
@@ -233,7 +247,7 @@ update msg model =
             )
 
         Reset ->
-            ( model, Nav.replaceUrl model.key (shareUrl defaultSettings) )
+            ( { model | settings = getSettingsFromQueryOrDefault model.url }, Cmd.none )
 
 
 view : Model -> List (Html Msg)
