@@ -1,3 +1,4 @@
+/* Based on Josh Comeau blog post: https://www.joshwcomeau.com/css/custom-css-reset/ */
 *, *::before, *::after {
     box-sizing: border-box;
 }
@@ -5,6 +6,8 @@
 * {
     margin: 0;
 }
+/* End of CSS reset */
+
 
 html, body, #elm {
     height: 100%;
