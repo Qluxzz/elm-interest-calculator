@@ -323,10 +323,10 @@ view { settings } =
                         (\c -> th [] [ text c ])
                         [ "År"
                         , "Startvärde"
-                        , "Årets sparande"
-                        , "Avkastning (kr)"
+                        , "Sparande"
+                        , "Avkastning"
                         , "Värde vid årets slut"
-                        , "Årets sparande (ack.)"
+                        , "Sparande (ack.)"
                         , "Avkastning (ack.)"
                         ]
                     )
