@@ -11,6 +11,9 @@ formatCurrency amount =
     if amount < 10000 then
         amountStr
 
+    else if amount > 999999999999999999 then
+        "∞"
+
     else
         amountStr
             |> String.foldr
