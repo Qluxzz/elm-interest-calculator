@@ -281,7 +281,14 @@ update msg model =
                             { settings | monthlySavings = draft |> String.toInt |> Maybe.withDefault settings.monthlySavings }
 
                         Just ( Interest, draft ) ->
-                            { settings | interest = draft |> String.toFloat |> Maybe.withDefault settings.interest }
+                            { settings
+                                | interest =
+                                    draft
+                                        -- Replace decimal seperator with valid for String.toFloat
+                                        |> String.replace "," "."
+                                        |> String.toFloat
+                                        |> Maybe.withDefault settings.interest
+                            }
 
                         Just ( Start, draft ) ->
                             { settings | start = draft |> String.toInt |> Maybe.withDefault settings.start }
@@ -318,6 +325,15 @@ numericTextInput attr =
         )
 
 
+decimalTextInput : List (Attribute msg) -> List (Html msg) -> Html msg
+decimalTextInput attr =
+    numericTextInput
+        ([ Attr.attribute "inputmode" "decimal"
+         ]
+            ++ attr
+        )
+
+
 view : Model -> List (Html Msg)
 view { settings, currentlyFocused } =
     [ h1 [] [ text "Ränta på ränta" ]
@@ -333,7 +349,7 @@ view { settings, currentlyFocused } =
                 , Event.onInput UpdateInterest
                 ]
                 []
-            , numericTextInput
+            , decimalTextInput
                 [ Attr.type_ "text"
                 , Attr.value
                     (case currentlyFocused of
