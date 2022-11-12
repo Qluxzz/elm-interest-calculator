@@ -36,24 +36,27 @@ type alias Query =
     }
 
 
-yearsQueryParam : String
-yearsQueryParam =
-    "years"
+type Field
+    = Years
+    | Interest
+    | MonthlySaving
+    | Start
 
 
-interestQueryParam : String
-interestQueryParam =
-    "interest"
+toQueryParam : Field -> String
+toQueryParam f =
+    case f of
+        Years ->
+            "years"
 
+        Interest ->
+            "interest"
 
-montlySavingsQueryParam : String
-montlySavingsQueryParam =
-    "monthlySavings"
+        MonthlySaving ->
+            "monthlySavings"
 
-
-startingSavingsQueryParam : String
-startingSavingsQueryParam =
-    "start"
+        Start ->
+            "start"
 
 
 parseSharedUrl : Url.Parser.Parser (Query -> a) a
@@ -61,20 +64,20 @@ parseSharedUrl =
     Url.Parser.query
         (Url.Parser.Query.map4
             Query
-            (Url.Parser.Query.int montlySavingsQueryParam)
-            (Url.Parser.Query.int yearsQueryParam)
-            (Url.Parser.Query.string interestQueryParam)
-            (Url.Parser.Query.int startingSavingsQueryParam)
+            (Url.Parser.Query.int (toQueryParam MonthlySaving))
+            (Url.Parser.Query.int (toQueryParam Years))
+            (Url.Parser.Query.string (toQueryParam Interest))
+            (Url.Parser.Query.int (toQueryParam Start))
         )
 
 
 shareUrl : Settings -> String
 shareUrl { interest, monthlySavings, start, years } =
     Url.Builder.toQuery
-        [ Url.Builder.string interestQueryParam (String.fromFloat interest)
-        , Url.Builder.int montlySavingsQueryParam monthlySavings
-        , Url.Builder.int startingSavingsQueryParam start
-        , Url.Builder.int yearsQueryParam years
+        [ Url.Builder.string (toQueryParam Interest) (String.fromFloat interest)
+        , Url.Builder.int (toQueryParam MonthlySaving) monthlySavings
+        , Url.Builder.int (toQueryParam Start) start
+        , Url.Builder.int (toQueryParam Years) years
         ]
 
 
@@ -90,6 +93,7 @@ type alias Model =
     { key : Nav.Key
     , url : Url.Url
     , settings : Settings
+    , currentlyFocused : Maybe ( Field, String )
     }
 
 
@@ -141,6 +145,7 @@ init _ url key =
     ( { url = url
       , key = key
       , settings = getSettingsFromQueryOrDefault url
+      , currentlyFocused = Nothing
       }
     , Cmd.none
     )
@@ -157,6 +162,10 @@ type Msg
     | UpdateMonthlySavings String
     | UpdateStartbelopp String
     | UpdateYears String
+      -- Text input
+    | FocusField Field
+    | ApplyDraft
+    | UpdateDraft String
       -- Action buttons
     | Share
     | Reset
@@ -198,13 +207,9 @@ update msg model =
                     noUpdate
 
         UpdateStartbelopp starting ->
-            case String.toInt starting of
-                Just s ->
-                    let
-                        updatedSettings =
-                            { settings | start = s }
-                    in
-                    ( { model | settings = updatedSettings }, Cmd.none )
+            case starting |> String.toInt |> Maybe.map (\s -> { settings | start = s }) of
+                Just updated ->
+                    ( { model | settings = updated }, Cmd.none )
 
                 Nothing ->
                     noUpdate
@@ -249,9 +254,72 @@ update msg model =
         Reset ->
             ( { model | settings = getSettingsFromQueryOrDefault model.url }, Cmd.none )
 
+        FocusField field ->
+            let
+                valueStr =
+                    case field of
+                        Interest ->
+                            String.fromFloat settings.interest
+
+                        MonthlySaving ->
+                            String.fromInt settings.monthlySavings
+
+                        Years ->
+                            String.fromInt settings.years
+
+                        Start ->
+                            String.fromInt settings.start
+            in
+            ( { model | currentlyFocused = Just ( field, valueStr ) }, Cmd.none )
+
+        ApplyDraft ->
+            let
+                updatedSettings : Settings
+                updatedSettings =
+                    case model.currentlyFocused of
+                        Just ( MonthlySaving, draft ) ->
+                            { settings | monthlySavings = draft |> String.toInt |> Maybe.withDefault settings.monthlySavings }
+
+                        Just ( Interest, draft ) ->
+                            { settings | interest = draft |> String.toFloat |> Maybe.withDefault settings.interest }
+
+                        Just ( Start, draft ) ->
+                            { settings | start = draft |> String.toInt |> Maybe.withDefault settings.start }
+
+                        Just ( Years, draft ) ->
+                            { settings | years = draft |> String.toInt |> Maybe.withDefault settings.years }
+
+                        _ ->
+                            settings
+            in
+            ( { model
+                | currentlyFocused = Nothing
+                , settings = updatedSettings
+              }
+            , Cmd.none
+            )
+
+        UpdateDraft str ->
+            let
+                updated =
+                    model.currentlyFocused |> Maybe.map (Tuple.mapSecond (\_ -> str))
+            in
+            ( { model | currentlyFocused = updated }, Cmd.none )
+
+
+numericTextInput : List (Attribute msg) -> List (Html msg) -> Html msg
+numericTextInput attr =
+    input
+        ([ Attr.type_ "text"
+         , Attr.pattern "[0-9]*"
+         , Attr.attribute "inputmode" "numeric"
+         ]
+            ++ attr
+        )
+
 
 view : Model -> List (Html Msg)
-view { settings } =
+view { settings, currentlyFocused } =
     [ h1 [] [ text "Ränta på ränta" ]
     , form []
         [ div []
@@ -265,7 +333,21 @@ view { settings } =
                 , Event.onInput UpdateInterest
                 ]
                 []
-            , span [] [ text (String.fromFloat settings.interest) ]
+            , numericTextInput
+                [ Attr.type_ "text"
+                , Attr.value
+                    (case currentlyFocused of
+                        Just ( Interest, draft ) ->
+                            draft
+
+                        _ ->
+                            settings.interest |> String.fromFloat
+                    )
+                , Event.onFocus (FocusField Interest)
+                , Event.onInput UpdateDraft
+                , Event.onBlur ApplyDraft
+                ]
+                []
             ]
         , div []
             [ label [ Attr.for "monthly-savings" ] [ text "Månadssparande" ]
@@ -278,7 +360,20 @@ view { settings } =
                 , Event.onInput UpdateMonthlySavings
                 ]
                 []
-            , span [] [ text (formatCurrency settings.monthlySavings) ]
+            , numericTextInput
+                [ Attr.value
+                    (case currentlyFocused of
+                        Just ( MonthlySaving, draft ) ->
+                            draft
+
+                        _ ->
+                            formatCurrency settings.monthlySavings
+                    )
+                , Event.onFocus (FocusField MonthlySaving)
+                , Event.onInput UpdateDraft
+                , Event.onBlur ApplyDraft
+                ]
+                []
             ]
         , div []
             [ label [ Attr.for "starting" ] [ text "Startbelopp" ]
@@ -291,7 +386,20 @@ view { settings } =
                 , Event.onInput UpdateStartbelopp
                 ]
                 []
-            , span [] [ text (formatCurrency settings.start) ]
+            , numericTextInput
+                [ Attr.value
+                    (case currentlyFocused of
+                        Just ( Start, draft ) ->
+                            draft
+
+                        _ ->
+                            formatCurrency settings.start
+                    )
+                , Event.onFocus (FocusField Start)
+                , Event.onInput UpdateDraft
+                , Event.onBlur ApplyDraft
+                ]
+                []
             ]
         , div []
             [ label [ Attr.for "years" ] [ text "Antal år" ]
@@ -304,7 +412,20 @@ view { settings } =
                 , Event.onInput UpdateYears
                 ]
                 []
-            , span [] [ text (String.fromInt settings.years) ]
+            , numericTextInput
+                [ Attr.value
+                    (case currentlyFocused of
+                        Just ( Years, draft ) ->
+                            draft
+
+                        _ ->
+                            formatCurrency settings.years
+                    )
+                , Event.onFocus (FocusField Years)
+                , Event.onInput UpdateDraft
+                , Event.onBlur ApplyDraft
+                ]
+                []
             ]
         ]
     , div [ Attr.id "actions" ]

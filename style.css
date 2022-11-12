@@ -39,12 +39,12 @@ form > div > label {
     flex: 1 0 150px;
 }
 
-form > div > span {
-    flex: 1 0 8ch;
+form > div > input[type="text"] {
+    width: 10ch;
     text-align: right;
 }
 
-form > div > input {
+form > div > input[type="range"] {
     flex: 1 1 100%;
 }
 
