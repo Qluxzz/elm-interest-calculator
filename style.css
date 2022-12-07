@@ -1,15 +1,20 @@
 /* Based on Josh Comeau blog post: https://www.joshwcomeau.com/css/custom-css-reset/ */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
     box-sizing: border-box;
 }
 
 * {
     margin: 0;
 }
+
 /* End of CSS reset */
 
 
-html, body, #elm {
+html,
+body,
+#elm {
     height: 100%;
 }
 
@@ -30,32 +35,32 @@ form {
     gap: 10px;
 }
 
-form > div {
+form>div {
     flex-grow: 1;
     display: flex;
     gap: 10px;
 }
 
-form > div > label {
-    flex: 1 0 132px;
+form>div>label {
+    flex: 1 0 180px;
 }
 
-form > div > input[type="text"] {
+form>div>input[type="text"] {
     width: 10ch;
     text-align: right;
 }
 
-form > div > input[type="range"] {
+form>div>input[type="range"] {
     flex: 1 1 100%;
 }
 
-@media screen and (max-width: 450px) {
-    form > div {
+@media screen and (max-width: 510px) {
+    form>div {
         flex-wrap: wrap;
     }
 
-    form > div > input[type="range"]  {
-       order: 2;
+    form>div>input[type="range"] {
+        order: 2;
     }
 }
 

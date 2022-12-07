@@ -33,6 +33,7 @@ type alias Query =
     , years : Maybe Int
     , interest : Maybe String
     , start : Maybe Int
+    , savingsIncrease : Maybe String
     }
 
 
@@ -41,6 +42,7 @@ type Field
     | Interest
     | MonthlySaving
     | Start
+    | SavingsIncrease
 
 
 toQueryParam : Field -> String
@@ -58,34 +60,44 @@ toQueryParam f =
         Start ->
             "start"
 
+        SavingsIncrease ->
+            "increase"
+
 
 parseSharedUrl : Url.Parser.Parser (Query -> a) a
 parseSharedUrl =
     Url.Parser.query
-        (Url.Parser.Query.map4
+        (Url.Parser.Query.map5
             Query
             (Url.Parser.Query.int (toQueryParam MonthlySaving))
             (Url.Parser.Query.int (toQueryParam Years))
             (Url.Parser.Query.string (toQueryParam Interest))
             (Url.Parser.Query.int (toQueryParam Start))
+            (Url.Parser.Query.string (toQueryParam SavingsIncrease))
         )
 
 
 shareUrl : Settings -> String
-shareUrl { interest, monthlySavings, start, years } =
+shareUrl { interest, monthlySavings, start, years, savingsIncrease } =
     Url.Builder.toQuery
         [ Url.Builder.string (toQueryParam Interest) (String.fromFloat interest)
         , Url.Builder.int (toQueryParam MonthlySaving) monthlySavings
         , Url.Builder.int (toQueryParam Start) start
         , Url.Builder.int (toQueryParam Years) years
+        , Url.Builder.string (toQueryParam SavingsIncrease) (String.fromFloat savingsIncrease)
         ]
 
 
+type alias Percentage =
+    Float
+
+
 type alias Settings =
-    { interest : Float
+    { interest : Percentage
     , monthlySavings : Int
     , start : Int
     , years : Int
+    , savingsIncrease : Percentage
     }
 
 
@@ -99,14 +111,15 @@ type alias Model =
 
 defaultSettings : Settings
 defaultSettings =
-    Settings
-        7.0
-        1000
-        10000
-        20
+    { interest = 7.0
+    , monthlySavings = 1000
+    , start = 10000
+    , years = 20
+    , savingsIncrease = 0.0
+    }
 
 
-getSettingsFromQuery : Url.Url -> Maybe Settings
+getSettingsFromQuery : Url.Url -> Settings
 getSettingsFromQuery url =
     let
         maybeSettings =
@@ -114,37 +127,24 @@ getSettingsFromQuery url =
             { url | path = "" }
                 |> Url.Parser.parse parseSharedUrl
     in
-    Maybe.andThen
-        (\settings ->
-            Maybe.map4
-                (\interest ->
-                    \monthlySavings ->
-                        \start ->
-                            \years ->
-                                Settings
-                                    interest
-                                    monthlySavings
-                                    start
-                                    years
-                )
-                (settings.interest |> Maybe.andThen String.toFloat)
-                settings.monthlySavings
-                settings.start
-                settings.years
-        )
-        maybeSettings
+    case maybeSettings of
+        Just settings ->
+            Settings
+                (settings.interest |> Maybe.andThen String.toFloat |> Maybe.withDefault defaultSettings.interest)
+                (settings.monthlySavings |> Maybe.withDefault defaultSettings.monthlySavings)
+                (settings.start |> Maybe.withDefault defaultSettings.start)
+                (settings.years |> Maybe.withDefault defaultSettings.years)
+                (settings.savingsIncrease |> Maybe.andThen String.toFloat |> Maybe.withDefault defaultSettings.savingsIncrease)
 
-
-getSettingsFromQueryOrDefault : Url.Url -> Settings
-getSettingsFromQueryOrDefault =
-    getSettingsFromQuery >> Maybe.withDefault defaultSettings
+        Nothing ->
+            defaultSettings
 
 
 init : flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init _ url key =
     ( { url = url
       , key = key
-      , settings = getSettingsFromQueryOrDefault url
+      , settings = getSettingsFromQuery url
       , currentlyFocused = Nothing
       }
     , Cmd.none
@@ -162,6 +162,7 @@ type Msg
     | UpdateMonthlySavings String
     | UpdateStartbelopp String
     | UpdateYears String
+    | UpdateSavingsIncrease String
       -- Text input
     | FocusField Field
     | ApplyDraft
@@ -226,6 +227,18 @@ update msg model =
                 Nothing ->
                     noUpdate
 
+        UpdateSavingsIncrease increase ->
+            case String.toFloat increase of
+                Just i ->
+                    let
+                        updatedSettings =
+                            { settings | savingsIncrease = i }
+                    in
+                    ( { model | settings = updatedSettings }, Cmd.none )
+
+                Nothing ->
+                    noUpdate
+
         UrlRequested urlRequest ->
             case urlRequest of
                 Browser.Internal url ->
@@ -235,7 +248,7 @@ update msg model =
                     ( model, Nav.load href )
 
         UrlChanged url ->
-            ( { model | url = url, settings = getSettingsFromQueryOrDefault url }
+            ( { model | url = url, settings = getSettingsFromQuery url }
             , Cmd.none
             )
 
@@ -252,7 +265,7 @@ update msg model =
             )
 
         Reset ->
-            ( { model | settings = getSettingsFromQueryOrDefault model.url }, Cmd.none )
+            ( { model | settings = getSettingsFromQuery model.url }, Cmd.none )
 
         FocusField field ->
             let
@@ -269,6 +282,9 @@ update msg model =
 
                         Start ->
                             String.fromInt settings.start
+
+                        SavingsIncrease ->
+                            String.fromFloat settings.savingsIncrease
             in
             ( { model | currentlyFocused = Just ( field, valueStr ) }, Cmd.none )
 
@@ -296,7 +312,17 @@ update msg model =
                         Just ( Years, draft ) ->
                             { settings | years = draft |> String.toInt |> Maybe.withDefault settings.years }
 
-                        _ ->
+                        Just ( SavingsIncrease, draft ) ->
+                            { settings
+                                | savingsIncrease =
+                                    draft
+                                        -- Replace decimal seperator with valid for String.toFloat
+                                        |> String.replace "," "."
+                                        |> String.toFloat
+                                        |> Maybe.withDefault settings.savingsIncrease
+                            }
+
+                        Nothing ->
                             settings
             in
             ( { model
@@ -328,10 +354,7 @@ numericTextInput attr =
 decimalTextInput : List (Attribute msg) -> List (Html msg) -> Html msg
 decimalTextInput attr =
     numericTextInput
-        ([ Attr.attribute "inputmode" "decimal"
-         ]
-            ++ attr
-        )
+        (Attr.attribute "inputmode" "decimal" :: attr)
 
 
 view : Model -> List (Html Msg)
@@ -345,6 +368,7 @@ view { settings, currentlyFocused } =
                 , Attr.min "0"
                 , Attr.max "25"
                 , Attr.step "0.1"
+                , Attr.tabindex -1
                 , Attr.value <| String.fromFloat <| settings.interest
                 , Event.onInput UpdateInterest
                 ]
@@ -372,6 +396,7 @@ view { settings, currentlyFocused } =
                 , Attr.min "0"
                 , Attr.max "20000"
                 , Attr.step "100"
+                , Attr.tabindex -1
                 , Attr.value <| String.fromInt <| settings.monthlySavings
                 , Event.onInput UpdateMonthlySavings
                 ]
@@ -398,6 +423,7 @@ view { settings, currentlyFocused } =
                 , Attr.min "0"
                 , Attr.max "1000000"
                 , Attr.step "1000"
+                , Attr.tabindex -1
                 , Attr.value <| String.fromInt <| settings.start
                 , Event.onInput UpdateStartbelopp
                 ]
@@ -424,6 +450,7 @@ view { settings, currentlyFocused } =
                 , Attr.min "0"
                 , Attr.max "40"
                 , Attr.step "1"
+                , Attr.tabindex -1
                 , Attr.value <| String.fromInt <| settings.years
                 , Event.onInput UpdateYears
                 ]
@@ -438,6 +465,33 @@ view { settings, currentlyFocused } =
                             formatCurrency settings.years
                     )
                 , Event.onFocus (FocusField Years)
+                , Event.onInput UpdateDraft
+                , Event.onBlur ApplyDraft
+                ]
+                []
+            ]
+        , div []
+            [ label [ Attr.for "increase" ] [ text "Ökning av sparande (%)" ]
+            , input
+                [ Attr.type_ "range"
+                , Attr.min "0"
+                , Attr.max "100"
+                , Attr.step "0.1"
+                , Attr.tabindex -1
+                , Attr.value <| String.fromFloat <| settings.savingsIncrease
+                , Event.onInput UpdateSavingsIncrease
+                ]
+                []
+            , numericTextInput
+                [ Attr.value
+                    (case currentlyFocused of
+                        Just ( SavingsIncrease, draft ) ->
+                            draft
+
+                        _ ->
+                            String.fromFloat settings.savingsIncrease
+                    )
+                , Event.onFocus (FocusField SavingsIncrease)
                 , Event.onInput UpdateDraft
                 , Event.onBlur ApplyDraft
                 ]
@@ -506,7 +560,7 @@ type alias Row =
 
 
 calculate : Settings -> List Row
-calculate { monthlySavings, start, interest, years } =
+calculate { monthlySavings, start, interest, years, savingsIncrease } =
     let
         initalYearlySavings : Int
         initalYearlySavings =
@@ -534,7 +588,7 @@ calculate { monthlySavings, start, interest, years } =
                     previous :: _ ->
                         let
                             yearlySavings =
-                                toFloat monthlySavings * 12
+                                previous.yearlySavings + previous.yearlySavings * (savingsIncrease / 100)
 
                             yield =
                                 (previous.valueAtYearsEnd + yearlySavings) * (interest / 100.0)
