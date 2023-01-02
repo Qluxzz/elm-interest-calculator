@@ -482,7 +482,7 @@ view { settings, currentlyFocused } =
                 , Event.onInput UpdateSavingsIncrease
                 ]
                 []
-            , numericTextInput
+            , decimalTextInput
                 [ Attr.value
                     (case currentlyFocused of
                         Just ( SavingsIncrease, draft ) ->
