@@ -5,6 +5,8 @@ import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Event
+import Process
+import Task
 import Url
 import Url.Builder
 import Url.Parser
@@ -170,6 +172,30 @@ type Msg
       -- Action buttons
     | Share
     | Reset
+    | DebounceQueryStringUpdate Settings
+
+
+{-| Replace decimal seperator with valid for String.toFloat
+-}
+internationalToFloat : String -> Maybe Float
+internationalToFloat =
+    String.replace "," "." >> String.toFloat
+
+
+toFloatWithDefault : Float -> String -> Float
+toFloatWithDefault default =
+    internationalToFloat >> Maybe.withDefault default
+
+
+debounce : Float -> Msg -> Cmd Msg
+debounce ms msg =
+    Process.sleep ms
+        |> Task.perform (\_ -> msg)
+
+
+debounceQueryStringUpdate : Settings -> Cmd Msg
+debounceQueryStringUpdate settings =
+    debounce 500 (DebounceQueryStringUpdate settings)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -187,10 +213,10 @@ update msg model =
             case String.toFloat interest of
                 Just i ->
                     let
-                        updatedSettings =
+                        updated =
                             { settings | interest = i }
                     in
-                    ( { model | settings = updatedSettings }, Cmd.none )
+                    ( { model | settings = updated }, debounceQueryStringUpdate updated )
 
                 Nothing ->
                     noUpdate
@@ -199,10 +225,10 @@ update msg model =
             case String.toInt savings of
                 Just s ->
                     let
-                        updatedSettings =
+                        updated =
                             { settings | monthlySavings = s }
                     in
-                    ( { model | settings = updatedSettings }, Cmd.none )
+                    ( { model | settings = updated }, debounceQueryStringUpdate updated )
 
                 Nothing ->
                     noUpdate
@@ -210,7 +236,7 @@ update msg model =
         UpdateStartbelopp starting ->
             case starting |> String.toInt |> Maybe.map (\s -> { settings | start = s }) of
                 Just updated ->
-                    ( { model | settings = updated }, Cmd.none )
+                    ( { model | settings = updated }, debounceQueryStringUpdate updated )
 
                 Nothing ->
                     noUpdate
@@ -219,10 +245,10 @@ update msg model =
             case String.toInt years of
                 Just y ->
                     let
-                        updatedSettings =
+                        updated =
                             { settings | years = y }
                     in
-                    ( { model | settings = updatedSettings }, Cmd.none )
+                    ( { model | settings = updated }, debounceQueryStringUpdate updated )
 
                 Nothing ->
                     noUpdate
@@ -231,10 +257,10 @@ update msg model =
             case String.toFloat increase of
                 Just i ->
                     let
-                        updatedSettings =
+                        updated =
                             { settings | savingsIncrease = i }
                     in
-                    ( { model | settings = updatedSettings }, Cmd.none )
+                    ( { model | settings = updated }, debounceQueryStringUpdate updated )
 
                 Nothing ->
                     noUpdate
@@ -300,10 +326,7 @@ update msg model =
                             { settings
                                 | interest =
                                     draft
-                                        -- Replace decimal seperator with valid for String.toFloat
-                                        |> String.replace "," "."
-                                        |> String.toFloat
-                                        |> Maybe.withDefault settings.interest
+                                        |> toFloatWithDefault settings.interest
                             }
 
                         Just ( Start, draft ) ->
@@ -316,10 +339,7 @@ update msg model =
                             { settings
                                 | savingsIncrease =
                                     draft
-                                        -- Replace decimal seperator with valid for String.toFloat
-                                        |> String.replace "," "."
-                                        |> String.toFloat
-                                        |> Maybe.withDefault settings.savingsIncrease
+                                        |> toFloatWithDefault settings.savingsIncrease
                             }
 
                         Nothing ->
@@ -329,7 +349,7 @@ update msg model =
                 | currentlyFocused = Nothing
                 , settings = updatedSettings
               }
-            , Cmd.none
+            , debounceQueryStringUpdate updatedSettings
             )
 
         UpdateDraft str ->
@@ -338,6 +358,13 @@ update msg model =
                     model.currentlyFocused |> Maybe.map (Tuple.mapSecond (\_ -> str))
             in
             ( { model | currentlyFocused = updated }, Cmd.none )
+
+        DebounceQueryStringUpdate updatedSettings ->
+            if updatedSettings == settings then
+                ( model, Nav.replaceUrl model.key (shareUrl settings) )
+
+            else
+                ( model, Cmd.none )
 
 
 numericTextInput : List (Attribute msg) -> List (Html msg) -> Html msg
