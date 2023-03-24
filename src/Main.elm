@@ -107,6 +107,7 @@ type alias Model =
     { key : Nav.Key
     , url : Url.Url
     , settings : Settings
+    , initalSettings : Settings
     , currentlyFocused : Maybe ( Field, String )
     }
 
@@ -144,9 +145,14 @@ getSettingsFromQuery url =
 
 init : flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init _ url key =
+    let
+        settings =
+            getSettingsFromQuery url
+    in
     ( { url = url
       , key = key
-      , settings = getSettingsFromQuery url
+      , settings = settings
+      , initalSettings = settings
       , currentlyFocused = Nothing
       }
     , Cmd.none
@@ -291,7 +297,7 @@ update msg model =
             )
 
         Reset ->
-            ( { model | settings = getSettingsFromQuery model.url }, Cmd.none )
+            ( { model | settings = model.initalSettings }, debounceQueryStringUpdate model.initalSettings )
 
         FocusField field ->
             let
@@ -385,7 +391,7 @@ decimalTextInput attr =
 
 
 view : Model -> List (Html Msg)
-view { settings, currentlyFocused } =
+view { initalSettings, settings, currentlyFocused } =
     [ h1 [] [ text "Ränta på ränta" ]
     , form []
         [ div []
@@ -530,7 +536,7 @@ view { settings, currentlyFocused } =
             [ Event.onClick Share ]
             [ text "Dela!" ]
         , button
-            [ Event.onClick Reset ]
+            [ Event.onClick Reset, Attr.disabled (initalSettings == settings) ]
             [ text "Återställ!" ]
         ]
     , div [ Attr.id "results" ]
