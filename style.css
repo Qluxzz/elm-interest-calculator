@@ -42,7 +42,7 @@ form>div {
 }
 
 form>div>label {
-    flex: 1 0 180px;
+    flex: 1 0 200px;
 }
 
 form>div>input[type="text"] {
