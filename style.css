@@ -29,10 +29,21 @@ body {
 
 /* SETTINGS */
 
+section {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 600px;
+    align-self: center;
+    align-items: center;
+    gap: 20px;
+}
+
 form {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    width: 100%;
 }
 
 form>div {
@@ -42,7 +53,7 @@ form>div {
 }
 
 form>div>label {
-    flex: 1 0 200px;
+    flex: 1 0 190px;
 }
 
 form>div>input[type="text"] {
@@ -51,7 +62,8 @@ form>div>input[type="text"] {
 }
 
 form>div>input[type="range"] {
-    flex: 1 1 100%;
+    max-width: 500px;
+    width: 100%;
 }
 
 @media screen and (max-width: 510px) {
@@ -77,12 +89,25 @@ thead {
     background: #fff;
 }
 
+thead>th {
+    word-wrap: none;
+}
+
 th {
     text-align: right;
+
 }
 
 td {
     text-align: right;
+}
+
+tbody>tr:nth-child(odd) {
+    background-color: #eee;
+}
+
+tbody>tr:hover {
+    background-color: #ccc;
 }
 
 #results {

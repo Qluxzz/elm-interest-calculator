@@ -392,152 +392,154 @@ decimalTextInput attr =
 
 view : Model -> List (Html Msg)
 view { initalSettings, settings, currentlyFocused } =
-    [ h1 [] [ text "Ränta på ränta" ]
-    , form []
-        [ div []
-            [ label [ Attr.for "interest" ] [ text "Ränta per år (%)" ]
-            , input
-                [ Attr.type_ "range"
-                , Attr.min "0"
-                , Attr.max "25"
-                , Attr.step "0.1"
-                , Attr.tabindex -1
-                , Attr.value <| String.fromFloat <| settings.interest
-                , Event.onInput UpdateInterest
-                ]
-                []
-            , decimalTextInput
-                [ Attr.type_ "text"
-                , Attr.value
-                    (case currentlyFocused of
-                        Just ( Interest, draft ) ->
-                            draft
+    [ section []
+        [ h1 [] [ text "Ränta på ränta" ]
+        , form []
+            [ div []
+                [ label [ Attr.for "interest" ] [ text "Ränta per år (%)" ]
+                , input
+                    [ Attr.type_ "range"
+                    , Attr.min "0"
+                    , Attr.max "25"
+                    , Attr.step "0.1"
+                    , Attr.tabindex -1
+                    , Attr.value <| String.fromFloat <| settings.interest
+                    , Event.onInput UpdateInterest
+                    ]
+                    []
+                , decimalTextInput
+                    [ Attr.type_ "text"
+                    , Attr.value
+                        (case currentlyFocused of
+                            Just ( Interest, draft ) ->
+                                draft
 
-                        _ ->
-                            settings.interest |> String.fromFloat
-                    )
-                , Event.onFocus (FocusField Interest)
-                , Event.onInput UpdateDraft
-                , Event.onBlur ApplyDraft
+                            _ ->
+                                settings.interest |> String.fromFloat
+                        )
+                    , Event.onFocus (FocusField Interest)
+                    , Event.onInput UpdateDraft
+                    , Event.onBlur ApplyDraft
+                    ]
+                    []
                 ]
-                []
-            ]
-        , div []
-            [ label [ Attr.for "monthly-savings" ] [ text "Månadssparande" ]
-            , input
-                [ Attr.type_ "range"
-                , Attr.min "0"
-                , Attr.max "20000"
-                , Attr.step "100"
-                , Attr.tabindex -1
-                , Attr.value <| String.fromInt <| settings.monthlySavings
-                , Event.onInput UpdateMonthlySavings
-                ]
-                []
-            , numericTextInput
-                [ Attr.value
-                    (case currentlyFocused of
-                        Just ( MonthlySaving, draft ) ->
-                            draft
+            , div []
+                [ label [ Attr.for "monthly-savings" ] [ text "Månadssparande" ]
+                , input
+                    [ Attr.type_ "range"
+                    , Attr.min "0"
+                    , Attr.max "20000"
+                    , Attr.step "100"
+                    , Attr.tabindex -1
+                    , Attr.value <| String.fromInt <| settings.monthlySavings
+                    , Event.onInput UpdateMonthlySavings
+                    ]
+                    []
+                , numericTextInput
+                    [ Attr.value
+                        (case currentlyFocused of
+                            Just ( MonthlySaving, draft ) ->
+                                draft
 
-                        _ ->
-                            formatCurrency settings.monthlySavings
-                    )
-                , Event.onFocus (FocusField MonthlySaving)
-                , Event.onInput UpdateDraft
-                , Event.onBlur ApplyDraft
+                            _ ->
+                                formatCurrency settings.monthlySavings
+                        )
+                    , Event.onFocus (FocusField MonthlySaving)
+                    , Event.onInput UpdateDraft
+                    , Event.onBlur ApplyDraft
+                    ]
+                    []
                 ]
-                []
-            ]
-        , div []
-            [ label [ Attr.for "starting" ] [ text "Startbelopp" ]
-            , input
-                [ Attr.type_ "range"
-                , Attr.min "0"
-                , Attr.max "1000000"
-                , Attr.step "1000"
-                , Attr.tabindex -1
-                , Attr.value <| String.fromInt <| settings.start
-                , Event.onInput UpdateStartbelopp
-                ]
-                []
-            , numericTextInput
-                [ Attr.value
-                    (case currentlyFocused of
-                        Just ( Start, draft ) ->
-                            draft
+            , div []
+                [ label [ Attr.for "starting" ] [ text "Startbelopp" ]
+                , input
+                    [ Attr.type_ "range"
+                    , Attr.min "0"
+                    , Attr.max "1000000"
+                    , Attr.step "1000"
+                    , Attr.tabindex -1
+                    , Attr.value <| String.fromInt <| settings.start
+                    , Event.onInput UpdateStartbelopp
+                    ]
+                    []
+                , numericTextInput
+                    [ Attr.value
+                        (case currentlyFocused of
+                            Just ( Start, draft ) ->
+                                draft
 
-                        _ ->
-                            formatCurrency settings.start
-                    )
-                , Event.onFocus (FocusField Start)
-                , Event.onInput UpdateDraft
-                , Event.onBlur ApplyDraft
+                            _ ->
+                                formatCurrency settings.start
+                        )
+                    , Event.onFocus (FocusField Start)
+                    , Event.onInput UpdateDraft
+                    , Event.onBlur ApplyDraft
+                    ]
+                    []
                 ]
-                []
-            ]
-        , div []
-            [ label [ Attr.for "years" ] [ text "Antal år" ]
-            , input
-                [ Attr.type_ "range"
-                , Attr.min "0"
-                , Attr.max "40"
-                , Attr.step "1"
-                , Attr.tabindex -1
-                , Attr.value <| String.fromInt <| settings.years
-                , Event.onInput UpdateYears
-                ]
-                []
-            , numericTextInput
-                [ Attr.value
-                    (case currentlyFocused of
-                        Just ( Years, draft ) ->
-                            draft
+            , div []
+                [ label [ Attr.for "years" ] [ text "Antal år" ]
+                , input
+                    [ Attr.type_ "range"
+                    , Attr.min "0"
+                    , Attr.max "40"
+                    , Attr.step "1"
+                    , Attr.tabindex -1
+                    , Attr.value <| String.fromInt <| settings.years
+                    , Event.onInput UpdateYears
+                    ]
+                    []
+                , numericTextInput
+                    [ Attr.value
+                        (case currentlyFocused of
+                            Just ( Years, draft ) ->
+                                draft
 
-                        _ ->
-                            formatCurrency settings.years
-                    )
-                , Event.onFocus (FocusField Years)
-                , Event.onInput UpdateDraft
-                , Event.onBlur ApplyDraft
+                            _ ->
+                                formatCurrency settings.years
+                        )
+                    , Event.onFocus (FocusField Years)
+                    , Event.onInput UpdateDraft
+                    , Event.onBlur ApplyDraft
+                    ]
+                    []
                 ]
-                []
-            ]
-        , div []
-            [ label [ Attr.for "increase" ] [ text "Ökning av sparande (%)" ]
-            , input
-                [ Attr.type_ "range"
-                , Attr.min "0"
-                , Attr.max "100"
-                , Attr.step "0.1"
-                , Attr.tabindex -1
-                , Attr.value <| String.fromFloat <| settings.savingsIncrease
-                , Event.onInput UpdateSavingsIncrease
-                ]
-                []
-            , decimalTextInput
-                [ Attr.value
-                    (case currentlyFocused of
-                        Just ( SavingsIncrease, draft ) ->
-                            draft
+            , div []
+                [ label [ Attr.for "increase" ] [ text "Ökning av sparande (%)" ]
+                , input
+                    [ Attr.type_ "range"
+                    , Attr.min "0"
+                    , Attr.max "100"
+                    , Attr.step "0.1"
+                    , Attr.tabindex -1
+                    , Attr.value <| String.fromFloat <| settings.savingsIncrease
+                    , Event.onInput UpdateSavingsIncrease
+                    ]
+                    []
+                , decimalTextInput
+                    [ Attr.value
+                        (case currentlyFocused of
+                            Just ( SavingsIncrease, draft ) ->
+                                draft
 
-                        _ ->
-                            String.fromFloat settings.savingsIncrease
-                    )
-                , Event.onFocus (FocusField SavingsIncrease)
-                , Event.onInput UpdateDraft
-                , Event.onBlur ApplyDraft
+                            _ ->
+                                String.fromFloat settings.savingsIncrease
+                        )
+                    , Event.onFocus (FocusField SavingsIncrease)
+                    , Event.onInput UpdateDraft
+                    , Event.onBlur ApplyDraft
+                    ]
+                    []
                 ]
-                []
             ]
-        ]
-    , div [ Attr.id "actions" ]
-        [ button
-            [ Event.onClick Share ]
-            [ text "Dela!" ]
-        , button
-            [ Event.onClick Reset, Attr.disabled (initalSettings == settings) ]
-            [ text "Återställ!" ]
+        , div [ Attr.id "actions" ]
+            [ button
+                [ Event.onClick Share ]
+                [ text "Dela!" ]
+            , button
+                [ Event.onClick Reset, Attr.disabled (initalSettings == settings) ]
+                [ text "Återställ!" ]
+            ]
         ]
     , div [ Attr.id "results" ]
         [ table []
