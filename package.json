@@ -1,0 +1,13 @@
+{
+  "name": "elm-interest-calculator",
+  "version": "1.0.0",
+  "description": "An app for calculating compounded interest combined with monthly saving.",
+  "scripts": {
+    "test": "npx elm-test"
+  },
+  "devDependencies": {
+    "elm-format": "^0.8.7",
+    "elm-live": "^4.0.2",
+    "elm-test": "^0.19.1-revision12"
+  }
+}
