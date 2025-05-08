@@ -6,6 +6,7 @@ import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Event
 import Process
+import String
 import Task
 import Url
 import Url.Builder
@@ -45,6 +46,63 @@ type Field
     | MonthlySaving
     | Start
     | SavingsIncrease
+
+
+fieldId : Field -> String
+fieldId field =
+    case field of
+        Years ->
+            "years"
+
+        Interest ->
+            "interest"
+
+        MonthlySaving ->
+            "monthly-savings"
+
+        Start ->
+            "start"
+
+        SavingsIncrease ->
+            "savings-increase"
+
+
+fieldTitle : Field -> String
+fieldTitle field =
+    case field of
+        Interest ->
+            "Ränta per år (%)"
+
+        MonthlySaving ->
+            "Månadssparande"
+
+        Start ->
+            "Startbelopp"
+
+        Years ->
+            "Antal år"
+
+        SavingsIncrease ->
+            "Ökning av sparande (%)"
+
+
+fieldUpdate : Field -> (String -> Msg)
+fieldUpdate field =
+    case field of
+        Years ->
+            UpdateYears
+
+        Interest ->
+            UpdateInterest
+
+        MonthlySaving ->
+            UpdateMonthlySavings
+
+        Start ->
+            UpdateStartbelopp
+
+        SavingsIncrease ->
+            UpdateSavingsIncrease
 
 
 toQueryParam : Field -> String
@@ -106,7 +164,7 @@ type alias Settings =
 type alias Model =
     { key : Nav.Key
     , url : Url.Url
-    , settings : Settings
+    , currentSettings : Settings
     , initialSettings : Settings
     , currentlyFocused : Maybe ( Field, String )
     }
@@ -151,7 +209,7 @@ init _ url key =
     in
     ( { url = url
       , key = key
-      , settings = settings
+      , currentSettings = settings
       , initialSettings = settings
       , currentlyFocused = Nothing
       }
@@ -212,7 +270,7 @@ update msg model =
             ( model, Cmd.none )
 
         settings =
-            model.settings
+            model.currentSettings
     in
     case msg of
         UpdateInterest interest ->
@@ -222,7 +280,7 @@ update msg model =
                         updated =
                             { settings | interest = i }
                     in
-                    ( { model | settings = updated }, debounceQueryStringUpdate updated )
+                    ( { model | currentSettings = updated }, debounceQueryStringUpdate updated )
 
                 Nothing ->
                     noUpdate
@@ -234,7 +292,7 @@ update msg model =
                         updated =
                             { settings | monthlySavings = s }
                     in
-                    ( { model | settings = updated }, debounceQueryStringUpdate updated )
+                    ( { model | currentSettings = updated }, debounceQueryStringUpdate updated )
 
                 Nothing ->
                     noUpdate
@@ -242,7 +300,7 @@ update msg model =
         UpdateStartbelopp starting ->
             case starting |> String.toInt |> Maybe.map (\s -> { settings | start = s }) of
                 Just updated ->
-                    ( { model | settings = updated }, debounceQueryStringUpdate updated )
+                    ( { model | currentSettings = updated }, debounceQueryStringUpdate updated )
 
                 Nothing ->
                     noUpdate
@@ -254,7 +312,7 @@ update msg model =
                         updated =
                             { settings | years = y }
                     in
-                    ( { model | settings = updated }, debounceQueryStringUpdate updated )
+                    ( { model | currentSettings = updated }, debounceQueryStringUpdate updated )
 
                 Nothing ->
                     noUpdate
@@ -266,7 +324,7 @@ update msg model =
                         updated =
                             { settings | savingsIncrease = i }
                     in
-                    ( { model | settings = updated }, debounceQueryStringUpdate updated )
+                    ( { model | currentSettings = updated }, debounceQueryStringUpdate updated )
 
                 Nothing ->
                     noUpdate
@@ -280,14 +338,14 @@ update msg model =
                     ( model, Nav.load href )
 
         UrlChanged url ->
-            ( { model | url = url, settings = getSettingsFromQuery url }
+            ( { model | url = url, currentSettings = getSettingsFromQuery url }
             , Cmd.none
             )
 
         Share ->
             let
                 queryParams =
-                    shareUrl model.settings
+                    shareUrl model.currentSettings
             in
             ( model
             , Cmd.batch
@@ -297,7 +355,7 @@ update msg model =
             )
 
         Reset ->
-            ( { model | settings = model.initialSettings }, debounceQueryStringUpdate model.initialSettings )
+            ( { model | currentSettings = model.initialSettings }, debounceQueryStringUpdate model.initialSettings )
 
         FocusField field ->
             let
@@ -353,7 +411,7 @@ update msg model =
             in
             ( { model
                 | currentlyFocused = Nothing
-                , settings = updatedSettings
+                , currentSettings = updatedSettings
               }
             , debounceQueryStringUpdate updatedSettings
             )
@@ -373,191 +431,162 @@ update msg model =
                 ( model, Cmd.none )
 
 
-numericTextInput : List (Attribute msg) -> List (Html msg) -> Html msg
-numericTextInput attr =
+numericTextInput : Field -> List (Attribute Msg) -> List (Html Msg) -> Html Msg
+numericTextInput field attr =
     input
         ([ Attr.type_ "text"
          , Attr.pattern "[0-9]*"
          , Attr.attribute "inputmode" "numeric"
+         , Event.onFocus (FocusField field)
+         , Event.onInput UpdateDraft
+         , Event.onBlur ApplyDraft
          ]
             ++ attr
         )
 
 
-decimalTextInput : List (Attribute msg) -> List (Html msg) -> Html msg
-decimalTextInput attr =
-    numericTextInput
+decimalTextInput : Field -> List (Attribute Msg) -> List (Html Msg) -> Html Msg
+decimalTextInput field attr =
+    numericTextInput field
         (Attr.attribute "inputmode" "decimal" :: attr)
 
 
+markedSlider : Field -> (number -> String) -> List (Attribute Msg) -> number -> number -> List (Html Msg)
+markedSlider field toString attrs current initial =
+    let
+        title =
+            fieldTitle field
+
+        id =
+            fieldId field
+
+        onChange =
+            fieldUpdate field
+    in
+    [ Html.label [ Attr.for id ] [ text title ]
+    , Html.input
+        (attrs
+            ++ [ Attr.type_ "range"
+               , Attr.tabindex -1
+               , Attr.value (toString current)
+               , Attr.list (id ++ "-marker")
+               , Event.onInput onChange
+               ]
+        )
+        []
+    , Html.datalist [ Attr.id (id ++ "-marker") ]
+        [ Html.option [ Attr.value <| toString initial ] []
+        ]
+    ]
+
+
+decimalInputWithSlider : Maybe ( Field, String ) -> Field -> List (Attribute Msg) -> Float -> Float -> List (Html Msg)
+decimalInputWithSlider currentlyFocused field attrs current initial =
+    markedSlider field String.fromFloat attrs current initial
+        ++ [ decimalTextInput
+                field
+                [ Attr.value
+                    (case currentlyFocused of
+                        Just ( f, draft ) ->
+                            if f == field then
+                                draft
+
+                            else
+                                String.fromFloat current
+
+                        _ ->
+                            String.fromFloat current
+                    )
+                ]
+                []
+           ]
+
+
+numericInputWithSlider : Maybe ( Field, String ) -> Field -> List (Attribute Msg) -> Int -> Int -> List (Html Msg)
+numericInputWithSlider currentlyFocused field attrs current initial =
+    markedSlider field String.fromInt attrs current initial
+        ++ [ numericTextInput
+                field
+                [ Attr.value
+                    (case currentlyFocused of
+                        Just ( f, draft ) ->
+                            if f == field then
+                                draft
+
+                            else
+                                String.fromInt current
+
+                        _ ->
+                            String.fromInt current
+                    )
+                ]
+                []
+           ]
+
+
 view : Model -> List (Html Msg)
-view { initialSettings, settings, currentlyFocused } =
+view { initialSettings, currentSettings, currentlyFocused } =
+    let
+        decimalInput =
+            decimalInputWithSlider currentlyFocused
+
+        numericInput =
+            numericInputWithSlider currentlyFocused
+    in
     [ section []
         [ h1 [] [ text "Ränta på ränta" ]
         , form []
             [ div []
-                [ label [ Attr.for "interest" ] [ text "Ränta per år (%)" ]
-                , input
-                    [ Attr.type_ "range"
-                    , Attr.min "0"
-                    , Attr.max "25"
-                    , Attr.step "0.1"
-                    , Attr.tabindex -1
-                    , Attr.value <| String.fromFloat <| settings.interest
-                    , Attr.list "interest-marker"
-                    , Event.onInput UpdateInterest
-                    ]
-                    []
-                , Html.datalist [ Attr.id "interest-marker" ]
-                    [ Html.option [ Attr.value <| String.fromFloat <| initialSettings.interest ] []
-                    ]
-                , decimalTextInput
-                    [ Attr.type_ "text"
-                    , Attr.value
-                        (case currentlyFocused of
-                            Just ( Interest, draft ) ->
-                                draft
-
-                            _ ->
-                                settings.interest |> String.fromFloat
-                        )
-                    , Event.onFocus (FocusField Interest)
-                    , Event.onInput UpdateDraft
-                    , Event.onBlur ApplyDraft
-                    ]
-                    []
-                ]
+                (decimalInput
+                    Interest
+                    [ Attr.min "0", Attr.max "25", Attr.step "0.1" ]
+                    currentSettings.interest
+                    initialSettings.interest
+                )
             , div []
-                [ label [ Attr.for "monthly-savings" ] [ text "Månadssparande" ]
-                , input
-                    [ Attr.type_ "range"
-                    , Attr.min "0"
+                (numericInput
+                    MonthlySaving
+                    [ Attr.min "0"
                     , Attr.max "20000"
                     , Attr.step "100"
-                    , Attr.tabindex -1
-                    , Attr.value <| String.fromInt <| settings.monthlySavings
-                    , Attr.list "monthly-savings-marker"
-                    , Event.onInput UpdateMonthlySavings
                     ]
-                    []
-                , Html.datalist [ Attr.id "monthly-savings-marker" ]
-                    [ Html.option [ Attr.value <| String.fromInt <| initialSettings.monthlySavings ] []
-                    ]
-                , numericTextInput
-                    [ Attr.value
-                        (case currentlyFocused of
-                            Just ( MonthlySaving, draft ) ->
-                                draft
-
-                            _ ->
-                                formatCurrency settings.monthlySavings
-                        )
-                    , Event.onFocus (FocusField MonthlySaving)
-                    , Event.onInput UpdateDraft
-                    , Event.onBlur ApplyDraft
-                    ]
-                    []
-                ]
+                    currentSettings.monthlySavings
+                    initialSettings.monthlySavings
+                )
             , div []
-                [ label [ Attr.for "starting" ] [ text "Startbelopp" ]
-                , input
-                    [ Attr.type_ "range"
-                    , Attr.min "0"
+                (numericInput
+                    Start
+                    [ Attr.min "0"
                     , Attr.max "1000000"
                     , Attr.step "1000"
-                    , Attr.tabindex -1
-                    , Attr.value <| String.fromInt <| settings.start
-                    , Attr.list "starting-marker"
-                    , Event.onInput UpdateStartbelopp
                     ]
-                    []
-                , Html.datalist [ Attr.id "starting-marker" ]
-                    [ Html.option [ Attr.value <| String.fromInt <| initialSettings.start ] []
-                    ]
-                , numericTextInput
-                    [ Attr.value
-                        (case currentlyFocused of
-                            Just ( Start, draft ) ->
-                                draft
-
-                            _ ->
-                                formatCurrency settings.start
-                        )
-                    , Event.onFocus (FocusField Start)
-                    , Event.onInput UpdateDraft
-                    , Event.onBlur ApplyDraft
-                    ]
-                    []
-                ]
+                    currentSettings.start
+                    initialSettings.start
+                )
             , div []
-                [ label [ Attr.for "years" ] [ text "Antal år" ]
-                , input
-                    [ Attr.type_ "range"
-                    , Attr.min "0"
-                    , Attr.max "40"
-                    , Attr.step "1"
-                    , Attr.tabindex -1
-                    , Attr.value <| String.fromInt <| settings.years
-                    , Attr.list "year-marker"
-                    , Event.onInput UpdateYears
-                    ]
-                    []
-                , Html.datalist [ Attr.id "year-marker" ]
-                    [ Html.option [ Attr.value <| String.fromInt <| initialSettings.years ] []
-                    ]
-                , numericTextInput
-                    [ Attr.value
-                        (case currentlyFocused of
-                            Just ( Years, draft ) ->
-                                draft
-
-                            _ ->
-                                formatCurrency settings.years
-                        )
-                    , Event.onFocus (FocusField Years)
-                    , Event.onInput UpdateDraft
-                    , Event.onBlur ApplyDraft
-                    ]
-                    []
-                ]
+                (numericInput
+                    Years
+                    [ Attr.min "0", Attr.max "40", Attr.step "1" ]
+                    currentSettings.years
+                    initialSettings.years
+                )
             , div []
-                [ label [ Attr.for "increase" ] [ text "Ökning av sparande (%)" ]
-                , input
-                    [ Attr.type_ "range"
-                    , Attr.min "0"
+                (decimalInput
+                    SavingsIncrease
+                    [ Attr.min "0"
                     , Attr.max "100"
                     , Attr.step "0.1"
-                    , Attr.tabindex -1
-                    , Attr.value <| String.fromFloat <| settings.savingsIncrease
-                    , Attr.list "increase-marker"
-                    , Event.onInput UpdateSavingsIncrease
                     ]
-                    []
-                , Html.datalist [ Attr.id "increase-marker" ]
-                    [ Html.option [ Attr.value <| String.fromFloat <| initialSettings.savingsIncrease ] []
-                    ]
-                , decimalTextInput
-                    [ Attr.value
-                        (case currentlyFocused of
-                            Just ( SavingsIncrease, draft ) ->
-                                draft
-
-                            _ ->
-                                String.fromFloat settings.savingsIncrease
-                        )
-                    , Event.onFocus (FocusField SavingsIncrease)
-                    , Event.onInput UpdateDraft
-                    , Event.onBlur ApplyDraft
-                    ]
-                    []
-                ]
+                    currentSettings.savingsIncrease
+                    initialSettings.savingsIncrease
+                )
             ]
         , div [ Attr.id "actions" ]
             [ button
                 [ Event.onClick Share ]
                 [ text "Dela!" ]
             , button
-                [ Event.onClick Reset, Attr.disabled (initialSettings == settings) ]
+                [ Event.onClick Reset, Attr.disabled (initialSettings == currentSettings) ]
                 [ text "Återställ!" ]
             ]
         ]
@@ -580,7 +609,7 @@ view { initialSettings, settings, currentlyFocused } =
             , tbody []
                 (List.map
                     mapRow
-                    (calculate settings)
+                    (calculate currentSettings)
                 )
             ]
         ]

@@ -33,7 +33,7 @@ section {
     display: flex;
     flex-direction: column;
     width: 100%;
-    max-width: 600px;
+    max-width: 800px;
     align-self: center;
     align-items: center;
     gap: 20px;
@@ -62,7 +62,6 @@ form>div>input[type="text"] {
 }
 
 form>div>input[type="range"] {
-    max-width: 500px;
     width: 100%;
 }
 
