@@ -107,7 +107,7 @@ type alias Model =
     { key : Nav.Key
     , url : Url.Url
     , settings : Settings
-    , initalSettings : Settings
+    , initialSettings : Settings
     , currentlyFocused : Maybe ( Field, String )
     }
 
@@ -152,7 +152,7 @@ init _ url key =
     ( { url = url
       , key = key
       , settings = settings
-      , initalSettings = settings
+      , initialSettings = settings
       , currentlyFocused = Nothing
       }
     , Cmd.none
@@ -181,7 +181,7 @@ type Msg
     | DebounceQueryStringUpdate Settings
 
 
-{-| Replace decimal seperator with valid for String.toFloat
+{-| Replace decimal separator with valid for String.toFloat
 -}
 internationalToFloat : String -> Maybe Float
 internationalToFloat =
@@ -297,7 +297,7 @@ update msg model =
             )
 
         Reset ->
-            ( { model | settings = model.initalSettings }, debounceQueryStringUpdate model.initalSettings )
+            ( { model | settings = model.initialSettings }, debounceQueryStringUpdate model.initialSettings )
 
         FocusField field ->
             let
@@ -391,7 +391,7 @@ decimalTextInput attr =
 
 
 view : Model -> List (Html Msg)
-view { initalSettings, settings, currentlyFocused } =
+view { initialSettings, settings, currentlyFocused } =
     [ section []
         [ h1 [] [ text "Ränta på ränta" ]
         , form []
@@ -537,7 +537,7 @@ view { initalSettings, settings, currentlyFocused } =
                 [ Event.onClick Share ]
                 [ text "Dela!" ]
             , button
-                [ Event.onClick Reset, Attr.disabled (initalSettings == settings) ]
+                [ Event.onClick Reset, Attr.disabled (initialSettings == settings) ]
                 [ text "Återställ!" ]
             ]
         ]
@@ -597,23 +597,23 @@ type alias Row =
 calculate : Settings -> List Row
 calculate { monthlySavings, start, interest, years, savingsIncrease } =
     let
-        initalYearlySavings : Int
-        initalYearlySavings =
+        initialYearlySavings : Int
+        initialYearlySavings =
             monthlySavings * 12
 
-        initalYield : Float
-        initalYield =
-            toFloat (start + initalYearlySavings) * (interest / 100)
+        initialYield : Float
+        initialYield =
+            toFloat (start + initialYearlySavings) * (interest / 100)
 
-        inital : Row
-        inital =
+        initial : Row
+        initial =
             { year = 1
             , start = toFloat start
-            , yearlySavings = toFloat initalYearlySavings
-            , yield = initalYield
-            , valueAtYearsEnd = toFloat start + toFloat initalYearlySavings + initalYield
-            , yearlySavingsAccumulated = toFloat initalYearlySavings
-            , yieldAccumulated = initalYield
+            , yearlySavings = toFloat initialYearlySavings
+            , yield = initialYield
+            , valueAtYearsEnd = toFloat start + toFloat initialYearlySavings + initialYield
+            , yearlySavingsAccumulated = toFloat initialYearlySavings
+            , yieldAccumulated = initialYield
             }
     in
     List.foldl
@@ -645,6 +645,6 @@ calculate { monthlySavings, start, interest, years, savingsIncrease } =
                     [] ->
                         acc
         )
-        [ inital ]
+        [ initial ]
         (List.range 2 years)
         |> List.reverse
