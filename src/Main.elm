@@ -607,29 +607,67 @@ view { initialSettings, currentSettings, currentlyFocused } =
                     )
                 ]
             , tbody []
-                (List.map
+                (List.map2
                     mapRow
                     (calculate currentSettings)
+                    (calculate { initialSettings | years = currentSettings.years })
                 )
             ]
         ]
     ]
 
 
-mapRow : Row -> Html msg
-mapRow { year, start, yearlySavings, yield, valueAtYearsEnd, yearlySavingsAccumulated, yieldAccumulated } =
+mapRow : Row -> Row -> Html msg
+mapRow current initial =
     tr []
         (List.map
-            (\v -> td [] [ text v ])
-            [ String.fromInt year
-            , formatCurrency (round start)
-            , formatCurrency (round yearlySavings)
-            , formatCurrency (round yield)
-            , formatCurrency (round valueAtYearsEnd)
-            , formatCurrency (round yearlySavingsAccumulated)
-            , formatCurrency (round yieldAccumulated)
+            (\v -> td [] [ v ])
+            [ Html.text <| String.fromInt current.year
+            , formatRow current.start initial.start
+            , formatRow current.yearlySavings initial.yearlySavings
+            , formatRow current.yield initial.yield
+            , formatRow current.valueAtYearsEnd initial.valueAtYearsEnd
+            , formatRow current.yearlySavingsAccumulated initial.yearlySavingsAccumulated
+            , formatRow current.yieldAccumulated initial.yieldAccumulated
             ]
         )
+
+
+formatRow : Float -> Float -> Html msg
+formatRow current initial =
+    if current == initial then
+        Html.text <| formatCurrency (round current)
+
+    else
+        let
+            difference =
+                current - initial
+
+            sign =
+                if difference > 0 then
+                    "+"
+
+                else
+                    "-"
+
+            color =
+                if difference > 0 then
+                    "green"
+
+                else
+                    "red"
+        in
+        Html.p []
+            [ Html.text <| formatCurrency (round current)
+            , Html.text " "
+            , Html.span [ Attr.style "color" color ]
+                [ Html.text <|
+                    "("
+                        ++ sign
+                        ++ formatCurrency (round (abs difference))
+                        ++ ")"
+                ]
+            ]
 
 
 type alias Row =
