@@ -404,9 +404,13 @@ view { initialSettings, settings, currentlyFocused } =
                     , Attr.step "0.1"
                     , Attr.tabindex -1
                     , Attr.value <| String.fromFloat <| settings.interest
+                    , Attr.list "interest-marker"
                     , Event.onInput UpdateInterest
                     ]
                     []
+                , Html.datalist [ Attr.id "interest-marker" ]
+                    [ Html.option [ Attr.value <| String.fromFloat <| initialSettings.interest ] []
+                    ]
                 , decimalTextInput
                     [ Attr.type_ "text"
                     , Attr.value
@@ -432,9 +436,13 @@ view { initialSettings, settings, currentlyFocused } =
                     , Attr.step "100"
                     , Attr.tabindex -1
                     , Attr.value <| String.fromInt <| settings.monthlySavings
+                    , Attr.list "monthly-savings-marker"
                     , Event.onInput UpdateMonthlySavings
                     ]
                     []
+                , Html.datalist [ Attr.id "monthly-savings-marker" ]
+                    [ Html.option [ Attr.value <| String.fromInt <| initialSettings.monthlySavings ] []
+                    ]
                 , numericTextInput
                     [ Attr.value
                         (case currentlyFocused of
@@ -459,9 +467,13 @@ view { initialSettings, settings, currentlyFocused } =
                     , Attr.step "1000"
                     , Attr.tabindex -1
                     , Attr.value <| String.fromInt <| settings.start
+                    , Attr.list "starting-marker"
                     , Event.onInput UpdateStartbelopp
                     ]
                     []
+                , Html.datalist [ Attr.id "starting-marker" ]
+                    [ Html.option [ Attr.value <| String.fromInt <| initialSettings.start ] []
+                    ]
                 , numericTextInput
                     [ Attr.value
                         (case currentlyFocused of
@@ -486,9 +498,13 @@ view { initialSettings, settings, currentlyFocused } =
                     , Attr.step "1"
                     , Attr.tabindex -1
                     , Attr.value <| String.fromInt <| settings.years
+                    , Attr.list "year-marker"
                     , Event.onInput UpdateYears
                     ]
                     []
+                , Html.datalist [ Attr.id "year-marker" ]
+                    [ Html.option [ Attr.value <| String.fromInt <| initialSettings.years ] []
+                    ]
                 , numericTextInput
                     [ Attr.value
                         (case currentlyFocused of
@@ -513,9 +529,13 @@ view { initialSettings, settings, currentlyFocused } =
                     , Attr.step "0.1"
                     , Attr.tabindex -1
                     , Attr.value <| String.fromFloat <| settings.savingsIncrease
+                    , Attr.list "increase-marker"
                     , Event.onInput UpdateSavingsIncrease
                     ]
                     []
+                , Html.datalist [ Attr.id "increase-marker" ]
+                    [ Html.option [ Attr.value <| String.fromFloat <| initialSettings.savingsIncrease ] []
+                    ]
                 , decimalTextInput
                     [ Attr.value
                         (case currentlyFocused of
