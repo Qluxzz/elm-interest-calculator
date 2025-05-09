@@ -547,7 +547,7 @@ view { initialSettings, currentSettings, currentlyFocused } =
                 (numericInput
                     MonthlySaving
                     [ Attr.min "0"
-                    , Attr.max "20000"
+                    , Attr.max "50000"
                     , Attr.step "100"
                     ]
                     currentSettings.monthlySavings
