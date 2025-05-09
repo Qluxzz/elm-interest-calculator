@@ -6,11 +6,11 @@ on:
 jobs:
   build:
     name: Build and minimize Elm
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Compile Elm to JS
         run: |
           npx elm make src/Main.elm --optimize --output elm.js
@@ -28,7 +28,7 @@ jobs:
           mv style.css build/
 
       - name: Upload production artifacts
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           name: github-pages
           path: build/
@@ -53,4 +53,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4
