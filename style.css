@@ -114,6 +114,10 @@ tbody>tr:hover {
     padding: 0 10px;
 }
 
+span {
+    white-space: nowrap;
+}
+
 /* ACTIONS */
 
 #actions {
