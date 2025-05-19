@@ -539,7 +539,10 @@ view { initialSettings, currentSettings, currentlyFocused } =
             [ div []
                 (decimalInput
                     Interest
-                    [ Attr.min "0", Attr.max "25", Attr.step "0.1" ]
+                    [ Attr.min "0"
+                    , Attr.max <| String.fromInt <| max 25 initialSettings.years
+                    , Attr.step "0.1"
+                    ]
                     currentSettings.interest
                     initialSettings.interest
                 )
@@ -547,7 +550,7 @@ view { initialSettings, currentSettings, currentlyFocused } =
                 (numericInput
                     MonthlySaving
                     [ Attr.min "0"
-                    , Attr.max "50000"
+                    , Attr.max <| String.fromInt <| max 20000 initialSettings.monthlySavings
                     , Attr.step "100"
                     ]
                     currentSettings.monthlySavings
@@ -557,7 +560,7 @@ view { initialSettings, currentSettings, currentlyFocused } =
                 (numericInput
                     Start
                     [ Attr.min "0"
-                    , Attr.max "1000000"
+                    , Attr.max <| String.fromInt <| max 1000000 initialSettings.start
                     , Attr.step "1000"
                     ]
                     currentSettings.start
@@ -566,7 +569,10 @@ view { initialSettings, currentSettings, currentlyFocused } =
             , div []
                 (numericInput
                     Years
-                    [ Attr.min "0", Attr.max "40", Attr.step "1" ]
+                    [ Attr.min "0"
+                    , Attr.max <| String.fromInt <| max 40 initialSettings.years
+                    , Attr.step "1"
+                    ]
                     currentSettings.years
                     initialSettings.years
                 )
@@ -574,7 +580,7 @@ view { initialSettings, currentSettings, currentlyFocused } =
                 (decimalInput
                     SavingsIncrease
                     [ Attr.min "0"
-                    , Attr.max "100"
+                    , Attr.max <| String.fromFloat <| max 100 initialSettings.savingsIncrease
                     , Attr.step "0.1"
                     ]
                     currentSettings.savingsIncrease
