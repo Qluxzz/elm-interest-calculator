@@ -1,0 +1,10 @@
+{
+    "short_name": "Interest Calculator",
+    "name": "Interest Calculator",
+    "description": "An app for calculating compounded interest combined with monthly saving",
+    "icons": [],
+    "start_url": "https://qluxzz.github.io/elm-interest-calculator",
+    "display": "browser",
+    "background_color": "#ffffff",
+    "theme_color": "#000000"
+}

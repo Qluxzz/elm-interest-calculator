@@ -1,43 +1,63 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=yes"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💸</text></svg>"
+    />
+    <title>Ränta på ränta</title>
+    <link rel="stylesheet" href="style.css" />
+    <script type="text/javascript" src="elm.js"></script>
+    <link
+      rel="canonical"
+      href="https://qluxzz.github.io/elm-interest-calculator/"
+    />
+    <link rel="manifest" href="manifest.json" />
+  </head>
 
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💸</text></svg>">
-	<title>Ränta på ränta</title>
-	<link rel="stylesheet" href="style.css" />
-	<script type="text/javascript" src="elm.js"></script>
-</head>
+  <body>
+    <pre id="elm"></pre>
+    <script type="text/javascript">
+      const app = Elm.Main.init({
+        node: document.getElementById("elm"),
+      })
 
-<body>
-	<pre id="elm"></pre>
-	<script type="text/javascript">
-		const app = Elm.Main.init({
-			node: document.getElementById("elm")
-		})
+      app.ports.shareSettings.subscribe((settingsQueryParams) => {
+        const shareUrl = `${window.location.origin}${window.location.pathname}${settingsQueryParams}`
 
-		app.ports.shareSettings.subscribe(settingsQueryParams => {
-			const shareUrl = `${window.location.origin}${window.location.pathname}${settingsQueryParams}`
+        const tryShare = [
+          // Mobile devices supporting navigator.share
+          () =>
+            navigator.share({
+              title: "Ränta på ränta",
+              url: shareUrl,
+            }),
+          // Desktop browsers
+          () => navigator.clipboard.writeText(shareUrl),
+        ]
 
-			const tryShare = [
-				// Mobile devices supporting navigator.share
-				() => navigator.share({
-					title: "Ränta på ränta",
-					url: shareUrl
-				}),
-				// Desktop browsers
-				() => navigator.clipboard.writeText(shareUrl)
-			]
+        for (const method of tryShare) {
+          try {
+            method()
+            break
+          } catch {}
+        }
+      })
 
-			for (const method of tryShare) {
-				try {
-					method()
-					break
-				} catch { }
-			}
-		})
-	</script>
-</body>
-
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("./service_worker.js").then(
+          (registration) =>
+            console.log("Service Worker registered! ", registration),
+          (error) => {
+            console.error("Service worker registration failed!", error)
+          }
+        )
+      }
+    </script>
+  </body>
 </html>
