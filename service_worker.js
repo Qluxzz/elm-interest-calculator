@@ -1,10 +1,5 @@
 const CACHE_NAME = "interest-app"
-const PRE_CACHED_RESOURCES = [
-  "/elm-interest-calculator/",
-  "manifest.json",
-  "elm.js",
-  "style.css",
-]
+const PRE_CACHED_RESOURCES = ["", "manifest.json", "style.css", "elm.js"]
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
@@ -16,11 +11,9 @@ self.addEventListener("install", (e) => {
  * @param {Request} request
  */
 async function cacheFirst(request) {
-  const url = new URL(request.url)
-
   // The query is only read by the app so we want to ignore the query when caching
   // so we don't cache the same thing multiple times
-  const urlWithoutQuery = `${url.origin}${url.pathname}`
+  const urlWithoutQuery = stripQueryFromUrl(request.url)
 
   const cachedResponse = await caches.match(urlWithoutQuery)
   if (cachedResponse) {
@@ -39,8 +32,20 @@ async function cacheFirst(request) {
 }
 
 self.addEventListener("fetch", (event) => {
-  const { pathname } = new URL(event.request.url)
-  if (PRE_CACHED_RESOURCES.some((resource) => pathname.endsWith(resource))) {
+  if (shouldCache(event.request.url))
     event.respondWith(cacheFirst(event.request))
-  }
 })
+
+function shouldCache(urlString) {
+  const urlWithoutQuery = stripQueryFromUrl(urlString)
+
+  return PRE_CACHED_RESOURCES.some(
+    (resource) => new Request(`./${resource}`).url === urlWithoutQuery
+  )
+}
+
+function stripQueryFromUrl(urlString) {
+  const url = new URL(urlString)
+
+  return `${url.origin}${url.pathname}`
+}
